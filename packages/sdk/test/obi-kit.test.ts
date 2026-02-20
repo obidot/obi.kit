@@ -1,59 +1,373 @@
+import type { ChainConfig, ObiPolkadotContext } from '@obidot-kit/core';
+import { VaultDepositTool } from '@obidot-kit/llm';
 import { describe, expect, it } from 'vitest';
+import { ObiKit } from '../src/obi-kit.js';
+
+const mockChainConfig: ChainConfig = {
+  endpoint: 'wss://rpc.polkadot.io',
+  chainId: 'polkadot',
+  name: 'Polkadot',
+};
+
+const mockKusamaConfig: ChainConfig = {
+  endpoint: 'wss://kusama-rpc.polkadot.io',
+  chainId: 'kusama',
+  name: 'Kusama',
+};
+
+const mockPolkadotContext: ObiPolkadotContext = {
+  api: {
+    initializeApi: async () => {},
+    disconnect: async () => {},
+    getApi: () => {
+      throw new Error('not connected');
+    },
+    setApi: () => {},
+    getAllApis: () => new Map(),
+    getChainSpec: () => '',
+    initializeChainApi: async () => ({
+      success: true,
+      chainId: 'polkadot',
+      message: 'ok',
+    }),
+  } as unknown as ObiPolkadotContext['api'],
+  signer: {
+    publicKey: new Uint8Array(32),
+    signTx: async () => new Uint8Array(),
+    signBytes: async () => new Uint8Array(),
+  } as unknown as ObiPolkadotContext['signer'],
+  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+};
 
 describe('ObiKit SDK', () => {
-  it('should export ObiKit class', async () => {
-    const mod = await import('../src/index.js');
-    expect(mod.ObiKit).toBeDefined();
+  describe('offline / stub mode', () => {
+    it('should create an ObiKit instance with chain config only', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      expect(kit).toBeInstanceOf(ObiKit);
+      expect(kit.getChainConfig()).toEqual(mockChainConfig);
+      expect(kit.isOnChainMode()).toBe(false);
+      expect(kit.getPolkadotContext()).toBeUndefined();
+      expect(kit.getAgentApi()).toBeUndefined();
+    });
+
+    it('should return an empty tools array when no vaults registered', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+      const tools = kit.getTools();
+      expect(tools).toEqual([]);
+    });
+
+    it('should return stub vault tools when vaults are registered', () => {
+      const kit = new ObiKit({
+        chainConfig: mockChainConfig,
+        vaults: [
+          {
+            id: 'v1',
+            name: 'DOT Vault',
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            chain: mockChainConfig,
+            asset: 'DOT',
+          },
+        ],
+      });
+
+      const tools = kit.getTools();
+      expect(tools.length).toBe(2);
+
+      const names = tools.map((t) => t.name);
+      expect(names).toContain('vault_deposit');
+      expect(names).toContain('vault_withdraw');
+    });
+
+    it('should allow updating chain config', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      kit.setChainConfig(mockKusamaConfig);
+
+      expect(kit.getChainConfig()).toEqual(mockKusamaConfig);
+    });
   });
 
-  it('should create an ObiKit instance with chain config', async () => {
-    const { ObiKit } = await import('../src/index.js');
-    const kit = new ObiKit({
-      chainConfig: {
-        endpoint: 'wss://rpc.polkadot.io',
-        chainId: 'polkadot',
-        name: 'Polkadot',
-      },
+  describe('on-chain mode (with polkadotContext)', () => {
+    it('should create an ObiKit instance with polkadotContext', () => {
+      const kit = new ObiKit({
+        polkadotContext: mockPolkadotContext,
+      });
+
+      expect(kit).toBeInstanceOf(ObiKit);
+      expect(kit.isOnChainMode()).toBe(true);
+      expect(kit.getPolkadotContext()).toBe(mockPolkadotContext);
+      expect(kit.getAgentApi()).toBeDefined();
     });
-    expect(kit).toBeInstanceOf(ObiKit);
-    expect(kit.getChainConfig()).toEqual({
-      endpoint: 'wss://rpc.polkadot.io',
-      chainId: 'polkadot',
-      name: 'Polkadot',
+
+    it('should return vault tools when vaults registered (before connect)', () => {
+      // Before connect() is called, PAK tools are not loaded.
+      // Only obi-kit vault tools should be available.
+      const kit = new ObiKit({
+        polkadotContext: mockPolkadotContext,
+        vaults: [
+          {
+            id: 'v1',
+            name: 'DOT Vault',
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            chain: mockChainConfig,
+            asset: 'DOT',
+          },
+        ],
+      });
+
+      const tools = kit.getTools();
+      const names = tools.map((t) => t.name);
+      expect(names).toContain('vault_deposit');
+      expect(names).toContain('vault_withdraw');
+    });
+
+    it('should not have PAK tools before connect() is called', () => {
+      const kit = new ObiKit({
+        polkadotContext: mockPolkadotContext,
+      });
+
+      expect(kit.isPakReady()).toBe(false);
+    });
+
+    it('should allow setting polkadot context at runtime', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      expect(kit.isOnChainMode()).toBe(false);
+
+      kit.setPolkadotContext(mockPolkadotContext);
+
+      expect(kit.isOnChainMode()).toBe(true);
+      expect(kit.getPolkadotContext()).toBe(mockPolkadotContext);
+      expect(kit.getAgentApi()).toBeDefined();
     });
   });
 
-  it('should return an empty tools array by default', async () => {
-    const { ObiKit } = await import('../src/index.js');
-    const kit = new ObiKit({
-      chainConfig: {
-        endpoint: 'wss://rpc.polkadot.io',
-        chainId: 'polkadot',
-      },
+  describe('vault registry', () => {
+    it('should register and retrieve vaults', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      const vault = {
+        id: 'v1',
+        name: 'DOT Vault',
+        address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+        chain: mockChainConfig,
+        asset: 'DOT',
+      };
+
+      kit.registerVault(vault);
+
+      expect(kit.getVault('v1')).toEqual(vault);
+      expect(kit.listVaults()).toHaveLength(1);
+      expect(kit.listVaults()[0]).toEqual(vault);
     });
-    const tools = kit.getTools();
-    expect(tools).toEqual([]);
+
+    it('should remove vaults', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      kit.registerVault({
+        id: 'v1',
+        name: 'DOT Vault',
+        address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+        chain: mockChainConfig,
+        asset: 'DOT',
+      });
+
+      expect(kit.removeVault('v1')).toBe(true);
+      expect(kit.getVault('v1')).toBeUndefined();
+      expect(kit.listVaults()).toHaveLength(0);
+    });
+
+    it('should return false when removing non-existent vault', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      expect(kit.removeVault('nonexistent')).toBe(false);
+    });
+
+    it('should rebuild agent API when vault is registered in on-chain mode', () => {
+      const kit = new ObiKit({
+        polkadotContext: mockPolkadotContext,
+      });
+
+      const toolsBefore = kit.getTools();
+      const namesBefore = toolsBefore.map((t) => t.name);
+      expect(namesBefore).not.toContain('vault_deposit');
+
+      kit.registerVault({
+        id: 'v1',
+        name: 'DOT Vault',
+        address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+        chain: mockChainConfig,
+        asset: 'DOT',
+      });
+
+      const toolsAfter = kit.getTools();
+      const namesAfter = toolsAfter.map((t) => t.name);
+      expect(namesAfter).toContain('vault_deposit');
+      expect(namesAfter).toContain('vault_withdraw');
+    });
+
+    it('should support method chaining for registerVault and addTool', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      const customTool = new VaultDepositTool({
+        chainConfig: mockChainConfig,
+      });
+      Object.defineProperty(customTool, 'name', { value: 'custom_tool' });
+
+      const result = kit
+        .registerVault({
+          id: 'v1',
+          name: 'DOT Vault',
+          address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+          chain: mockChainConfig,
+          asset: 'DOT',
+        })
+        .addTool(customTool);
+
+      expect(result).toBe(kit);
+    });
   });
 
-  it('should allow updating chain config', async () => {
-    const { ObiKit } = await import('../src/index.js');
-    const kit = new ObiKit({
-      chainConfig: {
-        endpoint: 'wss://rpc.polkadot.io',
-        chainId: 'polkadot',
-      },
+  describe('custom tools', () => {
+    it('should include custom tools in getTools()', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      const customTool = new VaultDepositTool({
+        chainConfig: mockChainConfig,
+      });
+      Object.defineProperty(customTool, 'name', { value: 'my_custom_tool' });
+
+      kit.addTool(customTool);
+
+      const tools = kit.getTools();
+      const names = tools.map((t) => t.name);
+      expect(names).toContain('my_custom_tool');
+    });
+  });
+
+  describe('invokeTool', () => {
+    it('should invoke a vault tool by name', async () => {
+      const kit = new ObiKit({
+        chainConfig: mockChainConfig,
+        vaults: [
+          {
+            id: 'v1',
+            name: 'DOT Vault',
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            chain: mockChainConfig,
+            asset: 'DOT',
+          },
+        ],
+      });
+
+      const result = await kit.invokeTool(
+        'vault_deposit',
+        JSON.stringify({
+          vaultAddress: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+          amount: '1000',
+          asset: 'DOT',
+        }),
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
     });
 
-    kit.setChainConfig({
-      endpoint: 'wss://kusama-rpc.polkadot.io',
-      chainId: 'kusama',
-      name: 'Kusama',
+    it('should return an error for unknown tool name', async () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      const result = await kit.invokeTool('nonexistent_tool', '{}');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not found');
+      expect(result.message).toContain('nonexistent_tool');
+    });
+  });
+
+  describe('inspect', () => {
+    it('should return inspection info in offline mode', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      const info = kit.inspect();
+
+      expect(info.mode).toBe('offline');
+      expect(info.chainConfig).toEqual(mockChainConfig);
+      expect(info.hasPolkadotContext).toBe(false);
+      expect(info.signerAddress).toBeUndefined();
+      expect(info.vaultCount).toBe(0);
+      expect(info.vaultIds).toEqual([]);
+      expect(info.customToolCount).toBe(0);
+      expect(info.customToolNames).toEqual([]);
+      expect(info.hasLegacySigner).toBe(false);
+      expect(typeof info.totalToolCount).toBe('number');
     });
 
-    expect(kit.getChainConfig()).toEqual({
-      endpoint: 'wss://kusama-rpc.polkadot.io',
-      chainId: 'kusama',
-      name: 'Kusama',
+    it('should return inspection info in on-chain mode', () => {
+      const kit = new ObiKit({
+        polkadotContext: mockPolkadotContext,
+        vaults: [
+          {
+            id: 'v1',
+            name: 'DOT Vault',
+            address: '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',
+            chain: mockChainConfig,
+            asset: 'DOT',
+          },
+        ],
+      });
+
+      const info = kit.inspect();
+
+      expect(info.mode).toBe('on-chain');
+      expect(info.hasPolkadotContext).toBe(true);
+      expect(info.signerAddress).toBe(mockPolkadotContext.address);
+      expect(info.vaultCount).toBe(1);
+      expect(info.vaultIds).toEqual(['v1']);
+      // At least vault tools should be counted
+      expect(info.totalToolCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('legacy signer', () => {
+    it('should accept and return a legacy transaction signer', () => {
+      const mockSigner = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        signAndSend: async () => '0xabc',
+      };
+
+      const kit = new ObiKit({
+        chainConfig: mockChainConfig,
+        signer: mockSigner,
+      });
+
+      expect(kit.getSigner()).toBe(mockSigner);
+    });
+
+    it('should allow replacing the legacy signer', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+      expect(kit.getSigner()).toBeUndefined();
+
+      const mockSigner = {
+        address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+        signAndSend: async () => '0xabc',
+      };
+
+      kit.setSigner(mockSigner);
+      expect(kit.getSigner()).toBe(mockSigner);
+    });
+  });
+
+  describe('both chainConfig and polkadotContext', () => {
+    it('should prefer on-chain mode when both are provided', () => {
+      const kit = new ObiKit({
+        chainConfig: mockChainConfig,
+        polkadotContext: mockPolkadotContext,
+      });
+
+      expect(kit.isOnChainMode()).toBe(true);
+      expect(kit.getChainConfig()).toEqual(mockChainConfig);
+      expect(kit.getPolkadotContext()).toBe(mockPolkadotContext);
     });
   });
 });
