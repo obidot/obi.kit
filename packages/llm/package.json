@@ -23,8 +23,11 @@
     "lint:fix": "biome check --write ."
   },
   "dependencies": {
-    "@obidot-kit/core": "workspace:*",
     "@langchain/core": "^0.3.0",
+    "@obidot-kit/core": "workspace:*",
+    "@polkadot-agent-kit/common": "2.1.5",
+    "@polkadot-agent-kit/llm": "2.1.5",
+    "polkadot-api": "^1.23.3",
     "zod": "^3.25.0"
   },
   "devDependencies": {

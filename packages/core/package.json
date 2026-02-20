@@ -36,5 +36,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@polkadot-agent-kit/common": "2.1.5",
+    "@polkadot-agent-kit/core": "2.1.5",
+    "polkadot-api": "^1.23.3"
   }
 }
