@@ -1,0 +1,46 @@
+{
+  "name": "@obidot-kit/sdk",
+  "version": "0.1.0",
+  "description": "High-level SDK combining core and LLM modules for Obidot Kit",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@obidot-kit/core": "workspace:*",
+    "@obidot-kit/llm": "workspace:*",
+    "@langchain/core": "^0.3.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "keywords": [
+    "polkadot",
+    "agent",
+    "langchain",
+    "defi",
+    "xcm",
+    "sdk"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

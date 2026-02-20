@@ -1,0 +1,40 @@
+{
+  "name": "@obidot-kit/cli",
+  "version": "0.1.0",
+  "description": "CLI tool for scaffolding and running Obidot Kit agents",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "obi-kit": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

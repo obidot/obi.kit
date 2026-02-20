@@ -1,0 +1,46 @@
+{
+  "name": "@obidot-kit/llm",
+  "version": "0.1.0",
+  "description": "LangChain tool implementations and agent factory for Obidot Kit",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@obidot-kit/core": "workspace:*",
+    "@langchain/core": "^0.3.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "keywords": [
+    "polkadot",
+    "agent",
+    "langchain",
+    "llm",
+    "defi",
+    "xcm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

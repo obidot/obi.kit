@@ -1,0 +1,21 @@
+{
+  "name": "@obidot-kit/example-vault-agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example: connect an AI agent to a DeFi vault and call deposit/withdraw",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*",
+    "@obidot-kit/core": "workspace:*",
+    "@obidot-kit/llm": "workspace:*",
+    "@langchain/core": "^0.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

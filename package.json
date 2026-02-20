@@ -1,0 +1,35 @@
+{
+  "name": "obidot-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Obidot Kit — Agent Kit Package extending Polkadot Agent Kit",
+  "license": "MIT",
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build && changeset publish",
+    "prepublishOnly": "turbo run build lint typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.3",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.4",
+    "@types/node": "^22.15.0",
+    "tsup": "^8.5.0",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}

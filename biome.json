@@ -1,0 +1,56 @@
+{
+  "root": true,
+  "files": {
+    "includes": [
+      "**/*.ts",
+      "**/*.json",
+      "**/*.md",
+      "!!**/.turbo",
+      "!!**/node_modules",
+      "!!**/dist",
+      "!!**/.changeset/*.md"
+    ],
+    "ignoreUnknown": true
+  },
+  "linter": {
+    "enabled": true,
+    "includes": ["**", "!node_modules/**", "!dist/**", "!.turbo/**", "!.changeset/**"],
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn"
+      },
+      "style": {
+        "useConst": "error",
+        "noNonNullAssertion": "warn"
+      },
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "lineWidth": 120,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "includes": ["**", "!node_modules/**", "!dist/**", "!.turbo/**", "!.changeset/**", "!pnpm-lock.yaml"]
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  }
+}
