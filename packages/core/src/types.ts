@@ -1,3 +1,63 @@
+// ── Bifrost Strategy Type Enum ──────────────────────────────────────────
+
+/**
+ * Bifrost DeFi strategy types matching the BifrostAdapter.sol contract.
+ */
+export enum BifrostStrategyType {
+  MintVToken = 0,
+  RedeemVToken = 1,
+  DEXSwap = 2,
+  FarmDeposit = 3,
+  FarmWithdraw = 4,
+  FarmClaim = 5,
+  SALPContribute = 6,
+}
+
+// ── Bifrost Currency ID Enum ────────────────────────────────────────────
+
+/**
+ * Bifrost currency identifiers for SLP, DEX, and Farming operations.
+ */
+export enum BifrostCurrencyId {
+  DOT = 0,
+  vDOT = 1,
+  KSM = 2,
+  vKSM = 3,
+  BNC = 4,
+}
+
+// ── Bifrost Strategy Labels ─────────────────────────────────────────────
+
+/**
+ * Human-readable labels for each Bifrost strategy type.
+ */
+export const BIFROST_STRATEGY_LABELS: Record<BifrostStrategyType, string> = {
+  [BifrostStrategyType.MintVToken]: 'Mint vToken (SLP)',
+  [BifrostStrategyType.RedeemVToken]: 'Redeem vToken (SLP)',
+  [BifrostStrategyType.DEXSwap]: 'DEX Swap',
+  [BifrostStrategyType.FarmDeposit]: 'Farm Deposit',
+  [BifrostStrategyType.FarmWithdraw]: 'Farm Withdraw',
+  [BifrostStrategyType.FarmClaim]: 'Farm Claim Rewards',
+  [BifrostStrategyType.SALPContribute]: 'SALP Contribute',
+};
+
+// ── Cross-Chain Message Types ───────────────────────────────────────────
+
+/**
+ * Cross-chain message types for ISMP (Hyperbridge) communication.
+ */
+export enum CrossChainMessageType {
+  DEPOSIT_SYNC = 1,
+  WITHDRAW_REQUEST = 2,
+  ASSET_SYNC = 3,
+  STRATEGY_REPORT = 4,
+  EMERGENCY_SYNC = 5,
+  DEPOSIT_ACK = 6,
+  WITHDRAW_FULFILL = 7,
+}
+
+// ── Chain Configuration ─────────────────────────────────────────────────
+
 /**
  * Configuration for connecting to a Polkadot-based chain.
  */
@@ -160,4 +220,95 @@ export interface AgentConfig {
   readonly modelName?: string;
   /** Optional API key for the LLM provider */
   readonly apiKey?: string;
+}
+
+// ── Satellite Vault Configuration ───────────────────────────────────────
+
+/**
+ * Configuration for a satellite vault deployed on a remote EVM chain.
+ * Extends the base `VaultConfig` with cross-chain routing information.
+ */
+export interface SatelliteVaultConfig extends VaultConfig {
+  /** Address of the hub vault on the main chain */
+  readonly hubVaultAddress: string;
+  /** Address of the CrossChainRouter contract */
+  readonly routerAddress: string;
+  /** JSON-RPC URL for the satellite EVM chain */
+  readonly rpcUrl: string;
+  /** EVM chain ID of the satellite chain */
+  readonly evmChainId: number;
+}
+
+// ── Cross-Chain Vault State ─────────────────────────────────────────────
+
+/**
+ * Aggregated state across the hub vault and all satellite vaults.
+ */
+export interface CrossChainVaultState {
+  /** Total assets held across all satellite vaults */
+  readonly totalSatelliteAssets: bigint;
+  /** Global total assets (hub + all satellites) */
+  readonly globalTotalAssets: bigint;
+  /** Global total shares across the entire vault system */
+  readonly globalTotalShares: bigint;
+  /** Per-satellite state keyed by chain name */
+  readonly satelliteAssets: Map<string, SatelliteChainState>;
+}
+
+// ── Per-Satellite Chain State ───────────────────────────────────────────
+
+/**
+ * State of a single satellite vault on a remote chain.
+ */
+export interface SatelliteChainState {
+  /** Human-readable name of the satellite chain */
+  readonly chainName: string;
+  /** Total assets held by this satellite vault */
+  readonly totalAssets: bigint;
+  /** Global total assets as reported by the satellite */
+  readonly globalTotalAssets: bigint;
+  /** Whether the satellite is in emergency mode */
+  readonly emergencyMode: boolean;
+  /** Unix timestamp of the last cross-chain sync */
+  readonly lastSyncTimestamp: number;
+  /** Whether the satellite vault is paused */
+  readonly paused: boolean;
+}
+
+// ── Bifrost Yield Product ───────────────────────────────────────────────
+
+/**
+ * Information about a Bifrost yield product (SLP, DEX, Farming, SALP).
+ */
+export interface BifrostYieldProduct {
+  /** Protocol name (e.g. "Bifrost") */
+  readonly protocol: string;
+  /** Product name (e.g. "vDOT Liquid Staking") */
+  readonly product: string;
+  /** Product category */
+  readonly category: 'SLP' | 'DEX' | 'Farming' | 'SALP';
+  /** Annual percentage yield */
+  readonly apy: number;
+  /** Input currency for the product */
+  readonly currencyIn: BifrostCurrencyId;
+  /** Output currency (if applicable, e.g. minting vDOT from DOT) */
+  readonly currencyOut?: BifrostCurrencyId;
+  /** Pool ID for farming/DEX operations */
+  readonly poolId?: number;
+  /** Whether the product is currently active */
+  readonly isActive: boolean;
+}
+
+// ── Bifrost Protocol Config ─────────────────────────────────────────────
+
+/**
+ * Registry entry for a Bifrost protocol pallet.
+ */
+export interface BifrostProtocolConfig {
+  /** Substrate pallet index */
+  readonly palletIndex: number;
+  /** Human-readable name */
+  readonly name: string;
+  /** Protocol identifier */
+  readonly protocol: string;
 }

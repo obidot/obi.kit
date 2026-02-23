@@ -1,8 +1,49 @@
 import type { StructuredToolInterface, Tool } from '@langchain/core/tools';
-import type { ObiPolkadotContext, VaultConfig } from '@obidot-kit/core';
-
+import type {
+  BifrostProtocolConfig,
+  BifrostYieldProduct,
+  ObiEvmContext,
+  ObiPolkadotContext,
+  SatelliteVaultConfig,
+  VaultConfig,
+} from '@obidot-kit/core';
+import type { BifrostStrategyService } from './tools/bifrost-strategy.js';
+import { BifrostStrategyTool } from './tools/bifrost-strategy.js';
+import { BifrostYieldTool } from './tools/bifrost-yield.js';
+import { CrossChainRebalanceTool } from './tools/cross-chain-rebalance.js';
+import { CrossChainStateTool } from './tools/cross-chain-state.js';
 import { VaultDepositTool } from './tools/vault-deposit.js';
 import { VaultWithdrawTool } from './tools/vault-withdraw.js';
+
+/**
+ * Bifrost-specific configuration for the agent API.
+ */
+export interface BifrostConfig {
+  /** Address of the BifrostAdapter contract. */
+  readonly adapterAddress: string;
+  /** Registry of Bifrost protocol pallets. */
+  readonly protocols?: Record<string, BifrostProtocolConfig>;
+  /** Optional service for executing Bifrost strategies on-chain. */
+  readonly strategyService?: BifrostStrategyService;
+  /** Optional async function for fetching live Bifrost yield data. */
+  readonly fetchYields?: () => Promise<BifrostYieldProduct[]>;
+}
+
+/**
+ * Cross-chain-specific configuration for the agent API.
+ */
+export interface CrossChainConfig {
+  /** Hub vault contract address. */
+  readonly hubVaultAddress: string;
+  /** CrossChainRouter contract address. */
+  readonly routerAddress: string;
+  /** Satellite vault configurations. */
+  readonly satellites: ReadonlyArray<SatelliteVaultConfig>;
+  /** EVM contexts keyed by chain name for reading satellite state. */
+  readonly evmContexts?: Map<string, ObiEvmContext>;
+  /** JSON-RPC URL for the hub chain (EVM side). */
+  readonly hubRpcUrl?: string;
+}
 
 /**
  * Configuration for creating an `ObiAgentApi` instance.
@@ -19,6 +60,18 @@ export interface ObiAgentApiConfig {
    * When provided, the agent will include vault deposit/withdraw tools.
    */
   readonly vaults?: ReadonlyArray<VaultConfig>;
+
+  /**
+   * Optional Bifrost DeFi configuration.
+   * When provided, the agent will include Bifrost yield and strategy tools.
+   */
+  readonly bifrostConfig?: BifrostConfig;
+
+  /**
+   * Optional cross-chain configuration.
+   * When provided, the agent will include cross-chain state and rebalance tools.
+   */
+  readonly crossChainConfig?: CrossChainConfig;
 }
 
 /**
@@ -45,12 +98,21 @@ export interface ObiAgentApiConfig {
  * const agentApi = new ObiAgentApi({
  *   polkadotContext: ctx,
  *   vaults: [{ id: 'v1', name: 'DOT Vault', address: '5F...', chain: { endpoint: 'wss://...' }, asset: 'DOT' }],
+ *   bifrostConfig: {
+ *     adapterAddress: '0x1234...',
+ *     protocols: { slp: { palletIndex: 100, name: 'SLP', protocol: 'Bifrost' } },
+ *   },
+ *   crossChainConfig: {
+ *     hubVaultAddress: '0xaaaa...',
+ *     routerAddress: '0xbbbb...',
+ *     satellites: [moonbeamSatellite],
+ *   },
  * });
  *
  * // Lazily initialise PAK tools (must be called before getAllTools)
  * await agentApi.init();
  *
- * // Get all tools (PAK + obi-kit) for LangChain agent binding
+ * // Get all tools (PAK + obi-kit + Bifrost + cross-chain)
  * const tools = agentApi.getAllTools();
  * ```
  */
@@ -60,10 +122,16 @@ export class ObiAgentApi {
   private readonly ctx: ObiPolkadotContext;
   private readonly vaults: ReadonlyArray<VaultConfig>;
   private readonly vaultTools: Tool[];
+  private readonly bifrostToolsCache: Tool[];
+  private readonly crossChainToolsCache: Tool[];
+  private readonly bifrostConfig: BifrostConfig | undefined;
+  private readonly crossChainConfig: CrossChainConfig | undefined;
 
   constructor(config: ObiAgentApiConfig) {
     this.ctx = config.polkadotContext;
     this.vaults = config.vaults ?? [];
+    this.bifrostConfig = config.bifrostConfig;
+    this.crossChainConfig = config.crossChainConfig;
 
     // Create vault tools wired to the live context
     this.vaultTools = [];
@@ -74,6 +142,12 @@ export class ObiAgentApi {
         new VaultWithdrawTool({ polkadotContext: this.ctx }),
       );
     }
+
+    // Create Bifrost tools if configured
+    this.bifrostToolsCache = this.buildBifrostTools();
+
+    // Create cross-chain tools if configured
+    this.crossChainToolsCache = this.buildCrossChainTools();
   }
 
   // ── Lazy PAK initialisation ─────────────────────────────────────────
@@ -154,18 +228,38 @@ export class ObiAgentApi {
     return this.vaultTools;
   }
 
+  // ── Bifrost tool accessors ──────────────────────────────────────────
+
+  /**
+   * Returns the Bifrost-specific tools (yield fetching and strategy execution).
+   * These are only present when `bifrostConfig` was provided.
+   */
+  getBifrostTools(): ReadonlyArray<Tool> {
+    return this.bifrostToolsCache;
+  }
+
+  // ── Cross-chain tool accessors ──────────────────────────────────────
+
+  /**
+   * Returns the cross-chain-specific tools (state aggregation and rebalancing).
+   * These are only present when `crossChainConfig` was provided.
+   */
+  getCrossChainTools(): ReadonlyArray<Tool> {
+    return this.crossChainToolsCache;
+  }
+
   // ── Combined tool surface ───────────────────────────────────────────
 
   /**
-   * Returns **all** tools — both the PAK tools and the obi-kit vault
-   * tools — as a flat `StructuredToolInterface[]` suitable for binding
-   * to a LangChain chat model via `model.bindTools(tools)`.
+   * Returns **all** tools — PAK tools, obi-kit vault tools, Bifrost tools,
+   * and cross-chain tools — as a flat `StructuredToolInterface[]` suitable
+   * for binding to a LangChain chat model via `model.bindTools(tools)`.
    *
    * The PAK actions are extracted from their `Action` wrapper so that
    * every entry in the returned array is a standard LangChain tool.
    *
-   * If PAK has not been initialised (via {@link init}), only vault tools
-   * are returned.
+   * If PAK has not been initialised (via {@link init}), only vault,
+   * Bifrost, and cross-chain tools are returned.
    */
   getAllTools(): StructuredToolInterface[] {
     const tools: StructuredToolInterface[] = [];
@@ -183,6 +277,16 @@ export class ObiAgentApi {
     // implements StructuredToolInterface)
     for (const vaultTool of this.vaultTools) {
       tools.push(vaultTool as unknown as StructuredToolInterface);
+    }
+
+    // Append Bifrost tools
+    for (const bifrostTool of this.bifrostToolsCache) {
+      tools.push(bifrostTool as unknown as StructuredToolInterface);
+    }
+
+    // Append cross-chain tools
+    for (const crossChainTool of this.crossChainToolsCache) {
+      tools.push(crossChainTool as unknown as StructuredToolInterface);
     }
 
     return tools;
@@ -218,5 +322,73 @@ export class ObiAgentApi {
    */
   getAddress(): string {
     return this.ctx.address;
+  }
+
+  // ── Internal helpers ────────────────────────────────────────────────
+
+  /**
+   * Builds the Bifrost tools (yield + strategy) when config is provided.
+   */
+  private buildBifrostTools(): Tool[] {
+    if (!this.bifrostConfig) {
+      return [];
+    }
+
+    const tools: Tool[] = [];
+
+    // Bifrost yield tool
+    tools.push(
+      new BifrostYieldTool({
+        provider: {
+          fetchYields: this.bifrostConfig.fetchYields,
+          protocols: this.bifrostConfig.protocols,
+        },
+      }),
+    );
+
+    // Bifrost strategy tool
+    tools.push(
+      new BifrostStrategyTool({
+        strategyService: this.bifrostConfig.strategyService,
+        adapterAddress: this.bifrostConfig.adapterAddress,
+        protocols: this.bifrostConfig.protocols,
+      }),
+    );
+
+    return tools;
+  }
+
+  /**
+   * Builds the cross-chain tools (state + rebalance) when config is provided.
+   */
+  private buildCrossChainTools(): Tool[] {
+    if (!this.crossChainConfig) {
+      return [];
+    }
+
+    const tools: Tool[] = [];
+
+    // Cross-chain state tool
+    tools.push(
+      new CrossChainStateTool({
+        hubVaultAddress: this.crossChainConfig.hubVaultAddress,
+        routerAddress: this.crossChainConfig.routerAddress,
+        satellites: this.crossChainConfig.satellites,
+        evmContexts: this.crossChainConfig.evmContexts,
+      }),
+    );
+
+    // Cross-chain rebalance tool
+    tools.push(
+      new CrossChainRebalanceTool({
+        polkadotContext: this.ctx,
+        hubVaultAddress: this.crossChainConfig.hubVaultAddress,
+        routerAddress: this.crossChainConfig.routerAddress,
+        satellites: this.crossChainConfig.satellites,
+        hubRpcUrl: this.crossChainConfig.hubRpcUrl,
+      }),
+    );
+
+    return tools;
   }
 }

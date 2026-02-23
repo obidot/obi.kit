@@ -37,6 +37,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "viem": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "viem": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@polkadot-agent-kit/common": "2.1.5",
     "@polkadot-agent-kit/core": "2.1.5",

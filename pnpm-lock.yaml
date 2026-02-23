@@ -29,9 +29,37 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+      viem:
+        specifier: ^2.21.0
+        version: 2.46.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       vitest:
         specifier: ^3.2.3
         version: 3.2.4(@types/node@22.19.11)(tsx@4.21.0)
+
+  examples/cross-chain-agent:
+    dependencies:
+      '@langchain/core':
+        specifier: ^0.3.0
+        version: 0.3.80
+      '@obidot-kit/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@obidot-kit/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
+      '@obidot-kit/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      viem:
+        specifier: ^2.21.0
+        version: 2.46.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+    devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   examples/vault-agent:
     dependencies:
@@ -85,6 +113,9 @@ importers:
       polkadot-api:
         specifier: ^1.23.3
         version: 1.23.3(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(utf-8-validate@5.0.10)
+      viem:
+        specifier: ^2.0.0
+        version: 2.46.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     devDependencies:
       tsup:
         specifier: ^8.5.0
@@ -109,7 +140,7 @@ importers:
         version: 2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(utf-8-validate@5.0.10)
       '@polkadot-agent-kit/llm':
         specifier: 2.1.5
-        version: 2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
+        version: 2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(viem@2.46.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       polkadot-api:
         specifier: ^1.23.3
         version: 1.23.3(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(utf-8-validate@5.0.10)
@@ -5410,7 +5441,7 @@ snapshots:
       - yaml
       - zod
 
-  '@polkadot-agent-kit/llm@2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)':
+  '@polkadot-agent-kit/llm@2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(viem@2.46.2(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
       '@langchain/core': 0.3.80
       '@polkadot-agent-kit/common': 2.1.5(bufferutil@4.1.0)(postcss@8.5.6)(rxjs@7.8.2)(tsx@4.21.0)(utf-8-validate@5.0.10)
@@ -5998,7 +6029,7 @@ snapshots:
       '@polkadot/api-augment': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@polkadot/api-base': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@polkadot/api-derive': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
-      '@polkadot/keyring': 14.0.1(@polkadot/util-crypto@14.0.1(@polkadot/util@14.0.1))(@polkadot/util@14.0.1)
+      '@polkadot/keyring': 14.0.1(@polkadot/util-crypto@14.0.1(@polkadot/util@13.5.9))(@polkadot/util@14.0.1)
       '@polkadot/rpc-augment': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@polkadot/rpc-core': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
       '@polkadot/rpc-provider': 16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)
@@ -6075,12 +6106,6 @@ snapshots:
     dependencies:
       '@polkadot/util': 14.0.1
       '@polkadot/util-crypto': 14.0.1(@polkadot/util@13.5.9)
-      tslib: 2.8.1
-
-  '@polkadot/keyring@14.0.1(@polkadot/util-crypto@14.0.1(@polkadot/util@14.0.1))(@polkadot/util@14.0.1)':
-    dependencies:
-      '@polkadot/util': 14.0.1
-      '@polkadot/util-crypto': 14.0.1(@polkadot/util@14.0.1)
       tslib: 2.8.1
 
   '@polkadot/networks@10.4.2':
@@ -6303,7 +6328,7 @@ snapshots:
 
   '@polkadot/rpc-provider@16.5.4(bufferutil@4.1.0)(utf-8-validate@5.0.10)':
     dependencies:
-      '@polkadot/keyring': 14.0.1(@polkadot/util-crypto@14.0.1(@polkadot/util@14.0.1))(@polkadot/util@14.0.1)
+      '@polkadot/keyring': 14.0.1(@polkadot/util-crypto@14.0.1(@polkadot/util@13.5.9))(@polkadot/util@14.0.1)
       '@polkadot/types': 16.5.4
       '@polkadot/types-support': 16.5.4
       '@polkadot/util': 14.0.1
@@ -6627,10 +6652,10 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@polkadot/networks': 12.6.2
       '@polkadot/util': 12.6.2
-      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))
+      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@12.6.2)
       '@polkadot/x-bigint': 12.6.2
-      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2))
+      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       '@scure/base': 1.2.6
       tslib: 2.8.1
 
@@ -6640,10 +6665,10 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@polkadot/networks': 13.5.6
       '@polkadot/util': 13.5.6
-      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))
+      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.6)
       '@polkadot/x-bigint': 13.5.6
-      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6))
+      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       '@scure/base': 1.2.6
       tslib: 2.8.1
 
@@ -6693,10 +6718,10 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@polkadot/networks': 14.0.1
       '@polkadot/util': 14.0.1
-      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))
+      '@polkadot/wasm-crypto': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@14.0.1)
       '@polkadot/x-bigint': 14.0.1
-      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1))
+      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       '@scure/base': 1.2.6
       '@scure/sr25519': 0.2.0
       tslib: 2.8.1
@@ -6757,18 +6782,18 @@ snapshots:
       '@polkadot/util': 10.4.2
       '@polkadot/x-randomvalues': 10.4.2
 
-  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))':
+  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 12.6.2
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@12.6.2)
-      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2))
+      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))':
+  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 13.5.6
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.6)
-      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6))
+      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-bridge@7.5.4(@polkadot/util@13.5.9)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
@@ -6792,11 +6817,11 @@ snapshots:
       '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))':
+  '@polkadot/wasm-bridge@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 14.0.1
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@14.0.1)
-      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1))
+      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-crypto-asmjs@6.4.1(@polkadot/util@10.4.2)':
@@ -6833,24 +6858,24 @@ snapshots:
       '@polkadot/wasm-crypto-wasm': 6.4.1(@polkadot/util@10.4.2)
       '@polkadot/x-randomvalues': 10.4.2
 
-  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))':
+  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 12.6.2
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@12.6.2)
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@12.6.2)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@12.6.2)
-      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2))
+      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))':
+  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 13.5.6
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@13.5.6)
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@13.5.6)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.6)
-      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6))
+      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@13.5.9)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
@@ -6883,14 +6908,14 @@ snapshots:
       '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))':
+  '@polkadot/wasm-crypto-init@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 14.0.1
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@14.0.1)
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@14.0.1)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@14.0.1)
-      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1))
+      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-crypto-wasm@6.4.1(@polkadot/util@10.4.2)':
@@ -6934,26 +6959,26 @@ snapshots:
       '@polkadot/wasm-util': 6.4.1(@polkadot/util@10.4.2)
       '@polkadot/x-randomvalues': 10.4.2
 
-  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))':
+  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 12.6.2
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@12.6.2)
-      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2)))
+      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@12.6.2)(@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@12.6.2)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@12.6.2)
-      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2))
+      '@polkadot/x-randomvalues': 12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))':
+  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 13.5.6
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@13.5.6)
-      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6)))
+      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@13.5.6)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@13.5.6)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.6)
-      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6))
+      '@polkadot/x-randomvalues': 13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-crypto@7.5.4(@polkadot/util@13.5.9)(@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
@@ -6989,15 +7014,15 @@ snapshots:
       '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
-  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))':
+  '@polkadot/wasm-crypto@7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))':
     dependencies:
       '@polkadot/util': 14.0.1
-      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))
+      '@polkadot/wasm-bridge': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-asmjs': 7.5.4(@polkadot/util@14.0.1)
-      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1)))
+      '@polkadot/wasm-crypto-init': 7.5.4(@polkadot/util@14.0.1)(@polkadot/x-randomvalues@14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9)))
       '@polkadot/wasm-crypto-wasm': 7.5.4(@polkadot/util@14.0.1)
       '@polkadot/wasm-util': 7.5.4(@polkadot/util@14.0.1)
-      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1))
+      '@polkadot/x-randomvalues': 14.0.1(@polkadot/util@13.5.9)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))
       tslib: 2.8.1
 
   '@polkadot/wasm-util@6.4.1(@polkadot/util@10.4.2)':
@@ -7100,17 +7125,17 @@ snapshots:
       '@babel/runtime': 7.28.6
       '@polkadot/x-global': 10.4.2
 
-  '@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@12.6.2))':
+  '@polkadot/x-randomvalues@12.6.2(@polkadot/util@12.6.2)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))':
     dependencies:
       '@polkadot/util': 12.6.2
-      '@polkadot/wasm-util': 7.5.4(@polkadot/util@12.6.2)
+      '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.9)
       '@polkadot/x-global': 12.6.2
       tslib: 2.8.1
 
-  '@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.6))':
+  '@polkadot/x-randomvalues@13.5.6(@polkadot/util@13.5.6)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))':
     dependencies:
       '@polkadot/util': 13.5.6
-      '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.6)
+      '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.9)
       '@polkadot/x-global': 13.5.6
       tslib: 2.8.1
 
@@ -7135,10 +7160,10 @@ snapshots:
       '@polkadot/x-global': 14.0.1
       tslib: 2.8.1
 
-  '@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@14.0.1))':
+  '@polkadot/x-randomvalues@14.0.1(@polkadot/util@14.0.1)(@polkadot/wasm-util@7.5.4(@polkadot/util@13.5.9))':
     dependencies:
       '@polkadot/util': 14.0.1
-      '@polkadot/wasm-util': 7.5.4(@polkadot/util@14.0.1)
+      '@polkadot/wasm-util': 7.5.4(@polkadot/util@13.5.9)
       '@polkadot/x-global': 14.0.1
       tslib: 2.8.1
 
@@ -7364,7 +7389,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.1
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
@@ -7646,14 +7671,6 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 7.3.1(@types/node@22.19.11)(tsx@4.21.0)
-
-  '@vitest/mocker@3.2.4(vite@7.3.1(@types/node@25.3.0)(tsx@4.21.0))':
-    dependencies:
-      '@vitest/spy': 3.2.4
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 7.3.1(@types/node@25.3.0)(tsx@4.21.0)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -9372,7 +9389,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.3.1(@types/node@25.3.0)(tsx@4.21.0))
+      '@vitest/mocker': 3.2.4(vite@7.3.1(@types/node@22.19.11)(tsx@4.21.0))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

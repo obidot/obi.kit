@@ -1,0 +1,22 @@
+{
+  "name": "@obidot-kit/example-cross-chain-agent",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example: cross-chain vault agent with Bifrost DeFi and satellite vaults",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*",
+    "@obidot-kit/core": "workspace:*",
+    "@obidot-kit/llm": "workspace:*",
+    "@langchain/core": "^0.3.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}
