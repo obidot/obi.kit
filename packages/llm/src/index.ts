@@ -11,6 +11,12 @@ export { ObiAgentApi } from './obi-agent-api.js';
 export type { ObiBaseToolOptions } from './tools/base-tool.js';
 export { ObiBaseTool } from './tools/base-tool.js';
 export type {
+  BatchStrategyInput,
+  BatchStrategyItem,
+  BatchStrategyToolOptions,
+} from './tools/batch-strategy.js';
+export { BatchStrategyTool } from './tools/batch-strategy.js';
+export type {
   BifrostStrategyInput,
   BifrostStrategyService,
   BifrostStrategyToolOptions,
@@ -32,6 +38,16 @@ export type {
 } from './tools/cross-chain-state.js';
 export { CrossChainStateTool } from './tools/cross-chain-state.js';
 export type {
+  OracleCheckInput,
+  OracleCheckToolOptions,
+} from './tools/oracle-check.js';
+export { OracleCheckTool } from './tools/oracle-check.js';
+export type {
+  PerformanceInput,
+  PerformanceToolOptions,
+} from './tools/performance.js';
+export { PerformanceTool } from './tools/performance.js';
+export type {
   VaultDepositInput,
   VaultDepositToolOptions,
 } from './tools/vault-deposit.js';
@@ -41,3 +57,8 @@ export type {
   VaultWithdrawToolOptions,
 } from './tools/vault-withdraw.js';
 export { VaultWithdrawTool } from './tools/vault-withdraw.js';
+export type {
+  WithdrawalQueueInput,
+  WithdrawalQueueToolOptions,
+} from './tools/withdrawal-queue.js';
+export { WithdrawalQueueTool } from './tools/withdrawal-queue.js';

@@ -1,106 +1,96 @@
 import { Tool } from '@langchain/core/tools';
-import type { ChainConfig, ObiPolkadotContext, ToolResult, VaultAction } from '@obidot-kit/core';
+import type { ChainConfig, EvmVaultConfig, ObiEvmContext, ObiPolkadotContext, ToolResult, VaultAction } from '@obidot-kit/core';
 
 export interface VaultWithdrawInput {
   /** The vault address or identifier to withdraw from */
   vaultAddress: string;
-  /** The amount to withdraw (as a string to preserve precision) */
+  /** The amount of assets to withdraw (as a string to preserve precision) */
   amount: string;
   /** The asset/token identifier to withdraw */
   asset?: string;
+  /** The receiver address for assets (defaults to signer). */
+  receiver?: string;
+  /** Whether to redeem shares instead of withdrawing assets. */
+  redeemShares?: boolean;
 }
 
 /**
  * Options for constructing a `VaultWithdrawTool`.
  *
- * Supports both a lightweight `chainConfig`-only mode (for offline / stub
- * usage) and a full `ObiPolkadotContext` mode (for real on-chain withdrawals).
+ * Supports three modes:
+ * 1. **EVM mode** — with `evmContext` + `vaultConfig` for real ObidotVault ERC-4626 withdrawals.
+ * 2. **Polkadot mode** — with `polkadotContext` for substrate-based withdrawals.
+ * 3. **Offline mode** — with only `chainConfig` for stubs.
  */
 export interface VaultWithdrawToolOptions {
-  /**
-   * Minimal chain metadata used for display and routing.
-   * Required when `polkadotContext` is not provided.
-   */
+  /** Minimal chain metadata used for display and routing. */
   chainConfig?: ChainConfig;
 
-  /**
-   * Fully initialised Polkadot context (API client + signer + address).
-   * When provided, the tool will attempt real on-chain execution.
-   */
+  /** Fully initialised Polkadot context. When provided, uses PAK path. */
   polkadotContext?: ObiPolkadotContext;
+
+  /** EVM context with public + wallet client for ObidotVault interactions. */
+  evmContext?: ObiEvmContext;
+
+  /** ObidotVault ERC-4626 configuration on Polkadot Hub EVM. */
+  vaultConfig?: EvmVaultConfig;
 }
 
 /**
- * LangChain tool for withdrawing assets from a DeFi vault on Polkadot-based networks.
+ * LangChain tool for withdrawing assets from the ObidotVault ERC-4626 contract.
  *
- * When constructed with an `ObiPolkadotContext` the tool has access to a live
- * `PolkadotApi` and `PolkadotSigner`, enabling real on-chain transaction
- * construction and submission via the Polkadot Agent Kit.
+ * In **EVM mode** (with `evmContext` + `vaultConfig`), the tool supports:
+ * - `withdraw(assets, receiver, owner)` — withdraw a specific asset amount.
+ * - `redeem(shares, receiver, owner)` — redeem shares for assets.
  *
- * When constructed with only a `ChainConfig` (no context), the tool falls
- * back to a stub implementation that returns a "pending" result — useful for
- * testing, dry-runs, and offline agent development.
- *
- * @example
- * ```ts
- * import { VaultWithdrawTool } from '@obidot-kit/llm';
- *
- * // Stub mode (offline)
- * const stub = new VaultWithdrawTool({
- *   chainConfig: { endpoint: 'wss://rpc.polkadot.io', chainId: 'polkadot' },
- * });
- *
- * // Live mode (on-chain)
- * const live = new VaultWithdrawTool({ polkadotContext: ctx });
- *
- * const result = await live.invoke('{"vaultAddress":"5F3s...","amount":"100","asset":"DOT"}');
- * ```
+ * In **offline mode**, returns a "pending" stub result.
  */
 export class VaultWithdrawTool extends Tool {
   name = 'vault_withdraw';
 
   description =
-    'Withdraw assets from a DeFi vault. Input should be a JSON string with "vaultAddress", "amount", and optionally "asset" fields.';
+    'Withdraw assets from the ObidotVault ERC-4626 vault on Polkadot Hub EVM. ' +
+    'Input should be a JSON string with "amount" (in base units), optional "vaultAddress" ' +
+    '(defaults to configured vault), optional "asset", optional "receiver", and ' +
+    '"redeemShares" (boolean, default false — if true, amount is treated as shares to redeem).';
 
   private chainConfig: ChainConfig | undefined;
   private polkadotContext: ObiPolkadotContext | undefined;
+  private evmContext: ObiEvmContext | undefined;
+  private vaultConfig: EvmVaultConfig | undefined;
 
   constructor(options: VaultWithdrawToolOptions) {
     super();
     this.chainConfig = options.chainConfig;
     this.polkadotContext = options.polkadotContext;
+    this.evmContext = options.evmContext;
+    this.vaultConfig = options.vaultConfig;
   }
 
-  /**
-   * Returns the effective chain config, falling back to a minimal object
-   * when only a polkadot context was supplied.
-   */
   private getChainConfig(): ChainConfig {
-    if (this.chainConfig) {
-      return this.chainConfig;
-    }
+    if (this.chainConfig) return this.chainConfig;
     return { endpoint: 'context-managed' };
   }
 
-  /**
-   * Returns `true` when the tool has a live Polkadot context available.
-   */
   hasPolkadotContext(): boolean {
     return this.polkadotContext !== undefined;
   }
 
-  /**
-   * Replace the chain config at runtime (e.g. switch networks).
-   */
+  hasEvmContext(): boolean {
+    return this.evmContext !== undefined && this.vaultConfig !== undefined;
+  }
+
   setChainConfig(config: ChainConfig): void {
     this.chainConfig = config;
   }
 
-  /**
-   * Replace the Polkadot context at runtime.
-   */
   setPolkadotContext(ctx: ObiPolkadotContext): void {
     this.polkadotContext = ctx;
+  }
+
+  setEvmContext(ctx: ObiEvmContext, vaultConfig: EvmVaultConfig): void {
+    this.evmContext = ctx;
+    this.vaultConfig = vaultConfig;
   }
 
   protected async _call(input: string): Promise<string> {
@@ -108,14 +98,14 @@ export class VaultWithdrawTool extends Tool {
       const parsed = this.parseInput(input);
       const config = this.getChainConfig();
       const action: VaultAction = {
-        type: 'withdraw',
+        type: parsed.redeemShares ? 'redeem' : 'withdraw',
         vaultAddress: parsed.vaultAddress,
         amount: parsed.amount,
         asset: parsed.asset ?? 'native',
         chainId: config.chainId,
       };
 
-      const result = await this.executeWithdraw(action);
+      const result = await this.executeWithdraw(action, parsed.receiver, parsed.redeemShares);
       return JSON.stringify(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -141,37 +131,52 @@ export class VaultWithdrawTool extends Tool {
 
     const obj = parsed as Record<string, unknown>;
 
-    if (typeof obj['vaultAddress'] !== 'string' || obj['vaultAddress'].length === 0) {
-      throw new Error('Missing or invalid "vaultAddress" field');
+    const vaultAddress =
+      typeof obj['vaultAddress'] === 'string' && obj['vaultAddress'].length > 0
+        ? obj['vaultAddress']
+        : this.vaultConfig?.vaultAddress;
+
+    if (!vaultAddress) {
+      throw new Error('Missing "vaultAddress" field and no vault configured');
     }
+
     if (typeof obj['amount'] !== 'string' || obj['amount'].length === 0) {
       throw new Error('Missing or invalid "amount" field');
     }
 
     return {
-      vaultAddress: obj['vaultAddress'],
+      vaultAddress,
       amount: obj['amount'],
       asset: typeof obj['asset'] === 'string' ? obj['asset'] : undefined,
+      receiver: typeof obj['receiver'] === 'string' ? obj['receiver'] : undefined,
+      redeemShares: typeof obj['redeemShares'] === 'boolean' ? obj['redeemShares'] : false,
     };
   }
 
-  /**
-   * Execute the withdraw action.
-   *
-   * When a live `ObiPolkadotContext` is available the method delegates to
-   * {@link executeOnChainWithdraw} which uses the PAK `PolkadotApi` and
-   * `PolkadotSigner` to construct and submit the extrinsic.
-   *
-   * Otherwise it falls back to a stub that returns a "pending" result.
-   *
-   * Override this method to integrate with a specific vault protocol.
-   */
-  protected async executeWithdraw(action: VaultAction): Promise<ToolResult> {
-    if (this.polkadotContext) {
-      return this.executeOnChainWithdraw(action, this.polkadotContext);
+  protected async executeWithdraw(action: VaultAction, receiver?: string, redeemShares?: boolean): Promise<ToolResult> {
+    // EVM mode: real on-chain withdraw/redeem via viem
+    if (this.evmContext?.walletClient && this.vaultConfig) {
+      return this.executeEvmWithdraw(action, receiver, redeemShares);
     }
 
-    // Stub / offline fallback
+    // Polkadot mode
+    if (this.polkadotContext) {
+      return {
+        success: true,
+        data: {
+          action: action.type,
+          vaultAddress: action.vaultAddress,
+          amount: action.amount,
+          asset: action.asset,
+          signerAddress: this.polkadotContext.address,
+          mode: 'polkadot',
+          status: 'pending',
+          message: `Withdraw of ${action.amount} from vault ${action.vaultAddress} prepared for on-chain submission`,
+        },
+      };
+    }
+
+    // Offline fallback
     return {
       success: true,
       data: {
@@ -182,45 +187,96 @@ export class VaultWithdrawTool extends Tool {
         chainId: action.chainId,
         endpoint: this.getChainConfig().endpoint,
         status: 'pending',
-        message: `Withdraw of ${action.amount} ${action.asset} from vault ${action.vaultAddress} submitted`,
+        message: `Withdraw of ${action.amount} from vault ${action.vaultAddress} submitted (offline mode)`,
       },
     };
   }
 
   /**
-   * Perform the withdrawal using the Polkadot Agent Kit infrastructure.
-   *
-   * This is the integration seam — protocol-specific vault implementations
-   * should override this method to build the correct extrinsic for their
-   * target pallet / smart contract.
-   *
-   * The default implementation constructs a placeholder that proves the
-   * context is wired correctly, and returns the signer address and API
-   * status for verification.
+   * Execute a real ERC-4626 withdraw or redeem via viem.
    */
-  protected async executeOnChainWithdraw(action: VaultAction, ctx: ObiPolkadotContext): Promise<ToolResult> {
-    // TODO: Replace with real extrinsic construction for target vault protocol.
-    //
-    // Example flow with a pallet-based vault:
-    //   const api = ctx.api.getApi(chainId as KnownChainId);
-    //   const tx = api.tx.vault.withdraw(action.vaultAddress, BigInt(action.amount));
-    //   const result = await tx.signSubmitAndWatch(ctx.signer);
-    //
-    // For now we return a richer "pending" stub that proves the context is
-    // available to downstream consumers.
+  private async executeEvmWithdraw(action: VaultAction, receiver?: string, redeemShares?: boolean): Promise<ToolResult> {
+    const ctx = this.evmContext!;
+    const wallet = ctx.walletClient!;
+    const account = ctx.account!;
+    const vaultAddress = action.vaultAddress as `0x${string}`;
+    const amount = BigInt(action.amount);
+    const receiverAddress = (receiver ?? account) as `0x${string}`;
+
+    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
+
+    if (redeemShares) {
+      // Redeem mode: shares -> assets
+      const assetsPreview = (await ctx.client.readContract({
+        address: vaultAddress,
+        abi: OBIDOT_VAULT_ABI,
+        functionName: 'previewRedeem',
+        args: [amount],
+      })) as bigint;
+
+      const hash = await wallet.writeContract({
+        address: vaultAddress,
+        abi: OBIDOT_VAULT_ABI,
+        functionName: 'redeem',
+        args: [amount, receiverAddress, account],
+        chain: ctx.chain,
+        account: account as `0x${string}`,
+      });
+
+      const receipt = await ctx.client.waitForTransactionReceipt({ hash });
+
+      return {
+        success: true,
+        data: {
+          action: 'redeem',
+          vaultAddress,
+          sharesRedeemed: amount.toString(),
+          assetsReceived: assetsPreview.toString(),
+          receiver: receiverAddress,
+          mode: 'evm',
+          status: receipt.status === 'success' ? 'confirmed' : 'failed',
+          blockNumber: Number(receipt.blockNumber),
+          message: `Redeemed ${amount.toString()} shares for ~${assetsPreview.toString()} assets.`,
+        },
+        txHash: hash,
+        blockNumber: Number(receipt.blockNumber),
+      };
+    }
+
+    // Withdraw mode: assets -> shares burned
+    const sharesPreview = (await ctx.client.readContract({
+      address: vaultAddress,
+      abi: OBIDOT_VAULT_ABI,
+      functionName: 'previewWithdraw',
+      args: [amount],
+    })) as bigint;
+
+    const hash = await wallet.writeContract({
+      address: vaultAddress,
+      abi: OBIDOT_VAULT_ABI,
+      functionName: 'withdraw',
+      args: [amount, receiverAddress, account],
+      chain: ctx.chain,
+      account: account as `0x${string}`,
+    });
+
+    const receipt = await ctx.client.waitForTransactionReceipt({ hash });
+
     return {
       success: true,
       data: {
-        action: action.type,
-        vaultAddress: action.vaultAddress,
-        amount: action.amount,
-        asset: action.asset,
-        chainId: action.chainId,
-        signerAddress: ctx.address,
-        mode: 'on-chain',
-        status: 'pending',
-        message: `Withdraw of ${action.amount} ${action.asset} from vault ${action.vaultAddress} prepared for on-chain submission by ${ctx.address}`,
+        action: 'withdraw',
+        vaultAddress,
+        assetsWithdrawn: amount.toString(),
+        sharesBurned: sharesPreview.toString(),
+        receiver: receiverAddress,
+        mode: 'evm',
+        status: receipt.status === 'success' ? 'confirmed' : 'failed',
+        blockNumber: Number(receipt.blockNumber),
+        message: `Withdrew ${amount.toString()} assets, burning ~${sharesPreview.toString()} shares.`,
       },
+      txHash: hash,
+      blockNumber: Number(receipt.blockNumber),
     };
   }
 }

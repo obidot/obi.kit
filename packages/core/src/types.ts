@@ -312,3 +312,99 @@ export interface BifrostProtocolConfig {
   /** Protocol identifier */
   readonly protocol: string;
 }
+
+// ── EVM Vault Configuration ────────────────────────────────────────────
+
+/**
+ * Configuration for connecting to the ObidotVault ERC-4626 contract
+ * deployed on Polkadot Hub EVM.
+ */
+export interface EvmVaultConfig {
+  /** The vault contract address on Polkadot Hub EVM */
+  readonly vaultAddress: `0x${string}`;
+  /** The underlying ERC-20 asset address */
+  readonly assetAddress: `0x${string}`;
+  /** JSON-RPC URL for the EVM chain */
+  readonly rpcUrl: string;
+  /** EVM chain ID (420420417 for Polkadot Hub Testnet) */
+  readonly chainId: number;
+  /** Asset decimals (default: 10 for DOT) */
+  readonly decimals?: number;
+  /** Optional OracleRegistry contract address */
+  readonly oracleRegistryAddress?: `0x${string}`;
+}
+
+// ── Strategy Intent Types ──────────────────────────────────────────────
+
+/**
+ * On-chain strategy status matching the ObidotVault.StrategyStatus enum.
+ */
+export enum StrategyStatus {
+  Pending = 0,
+  Sent = 1,
+  Executed = 2,
+  Failed = 3,
+}
+
+/**
+ * EIP-712 typed StrategyIntent for signing off-chain.
+ */
+export interface StrategyIntent {
+  readonly asset: `0x${string}`;
+  readonly amount: bigint;
+  readonly minReturn: bigint;
+  readonly maxSlippageBps: bigint;
+  readonly deadline: bigint;
+  readonly nonce: bigint;
+  readonly xcmCall: `0x${string}`;
+  readonly targetParachain: number;
+  readonly targetProtocol: `0x${string}`;
+}
+
+/**
+ * On-chain strategy record as returned by `strategies(uint256)`.
+ */
+export interface StrategyRecord {
+  readonly status: StrategyStatus;
+  readonly strategist: `0x${string}`;
+  readonly amount: bigint;
+  readonly minReturn: bigint;
+  readonly targetParachain: number;
+  readonly targetProtocol: `0x${string}`;
+  readonly executedAt: bigint;
+}
+
+// ── Withdrawal Queue Types ─────────────────────────────────────────────
+
+/**
+ * On-chain withdrawal request as returned by `withdrawalRequests(uint256)`.
+ */
+export interface WithdrawalRequest {
+  readonly owner: `0x${string}`;
+  readonly shares: bigint;
+  readonly assets: bigint;
+  readonly claimableAt: bigint;
+}
+
+// ── Performance Types ──────────────────────────────────────────────────
+
+/**
+ * Vault performance summary as returned by `performanceSummary()`.
+ */
+export interface PerformanceSummary {
+  readonly cumulativePnL: bigint;
+  readonly highWaterMark: bigint;
+  readonly performanceFeeBps: bigint;
+  readonly feeTreasury: `0x${string}`;
+}
+
+/**
+ * Per-protocol performance record as returned by `getProtocolPerformance()`.
+ */
+export interface ProtocolPerformanceRecord {
+  readonly totalDeployed: bigint;
+  readonly totalReturned: bigint;
+  readonly executionCount: bigint;
+  readonly successCount: bigint;
+  readonly lastExecutedAt: bigint;
+}
