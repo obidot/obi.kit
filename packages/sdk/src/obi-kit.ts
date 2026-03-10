@@ -1,28 +1,38 @@
-import type { Tool } from '@langchain/core/tools';
+import type { Tool } from "@langchain/core/tools";
 import type {
   ChainConfig,
   EvmVaultConfig,
   ObiEvmContext,
   ObiPolkadotContext,
   SatelliteVaultConfig,
+  SwapRouterConfig,
   ToolResult,
   TransactionSigner,
   VaultConfig,
-} from '@obidot-kit/core';
-import type { BifrostConfig, CrossChainConfig, ObiAgentApiConfig } from '@obidot-kit/llm';
+} from "@obidot-kit/core";
+import type {
+  BifrostConfig,
+  CrossChainConfig,
+  ObiAgentApiConfig,
+} from "@obidot-kit/llm";
 import {
   BatchStrategyTool,
   BifrostStrategyTool,
   BifrostYieldTool,
   CrossChainRebalanceTool,
   CrossChainStateTool,
+  ExecuteIntentTool,
+  ExecuteLocalSwapTool,
   ObiAgentApi,
   OracleCheckTool,
   PerformanceTool,
+  SwapExecuteTool,
+  SwapMultiHopTool,
+  SwapQuoteTool,
   VaultDepositTool,
   VaultWithdrawTool,
   WithdrawalQueueTool,
-} from '@obidot-kit/llm';
+} from "@obidot-kit/llm";
 
 /**
  * Configuration options for initializing the ObiKit SDK.
@@ -81,6 +91,13 @@ export interface ObiKitConfig {
    * Required alongside `hubEvmContext` for live vault operations.
    */
   readonly evmVaultConfig?: EvmVaultConfig;
+
+  /**
+   * Optional SwapRouter/SwapQuoter configuration. When provided with
+   * `hubEvmContext`, enables on-hub DEX aggregator tools (swap quote,
+   * swap execute, multi-hop swap).
+   */
+  readonly swapRouterConfig?: SwapRouterConfig;
 }
 
 /**
@@ -146,6 +163,7 @@ export class ObiKit {
   private readonly evmContexts: Map<string, ObiEvmContext>;
   private hubEvmContext: ObiEvmContext | undefined;
   private evmVaultConfig: EvmVaultConfig | undefined;
+  private swapRouterConfig: SwapRouterConfig | undefined;
 
   constructor(config: ObiKitConfig) {
     this.chainConfig = config.chainConfig;
@@ -158,6 +176,7 @@ export class ObiKit {
     this.evmContexts = new Map(config.evmContexts ?? []);
     this.hubEvmContext = config.hubEvmContext;
     this.evmVaultConfig = config.evmVaultConfig;
+    this.swapRouterConfig = config.swapRouterConfig;
 
     if (config.vaults) {
       for (const vault of config.vaults) {
@@ -236,7 +255,9 @@ export class ObiKit {
    * Returns `true` when the SDK has an EVM context for the hub vault.
    */
   isEvmMode(): boolean {
-    return this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined;
+    return (
+      this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined
+    );
   }
 
   setPolkadotContext(ctx: ObiPolkadotContext): void {
@@ -265,6 +286,101 @@ export class ObiKit {
 
   getHubEvmContext(): ObiEvmContext | undefined {
     return this.hubEvmContext;
+  }
+
+  // ── SwapRouter configuration ─────────────────────────────────────────
+
+  /**
+   * Register (or replace) the SwapRouter/SwapQuoter configuration.
+   */
+  registerSwapRouter(config: SwapRouterConfig): void {
+    this.swapRouterConfig = config;
+  }
+
+  /**
+   * Returns the current SwapRouter configuration, if set.
+   */
+  getSwapRouterConfig(): SwapRouterConfig | undefined {
+    return this.swapRouterConfig;
+  }
+
+  /**
+   * Convenience: get a swap quote from the SwapQuoter contract.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.quoterAddress`.
+   *
+   * @param input - JSON string matching `SwapQuoteInput`
+   * @returns Parsed `ToolResult` with quote data
+   */
+  async getSwapQuote(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_quote", input);
+  }
+
+  /**
+   * Convenience: execute a single-hop swap via the SwapRouter.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.routerAddress`.
+   *
+   * @param input - JSON string matching `SwapExecuteInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_execute", input);
+  }
+
+  /**
+   * Convenience: execute a multi-hop swap via the SwapRouter.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.routerAddress`.
+   *
+   * @param input - JSON string matching `SwapMultiHopInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeMultiHopSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_multi_hop", input);
+  }
+
+  /**
+   * Convenience: execute a vault-routed on-hub swap with EIP-712 auth.
+   *
+   * Requires `hubEvmContext` and `evmVaultConfig`.
+   *
+   * @param input - JSON string matching `ExecuteLocalSwapInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeLocalSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("execute_local_swap", input);
+  }
+
+  /**
+   * Convenience: execute a universal intent for cross-chain routing.
+   *
+   * Requires `hubEvmContext` and `evmVaultConfig`.
+   *
+   * @param input - JSON string matching `ExecuteIntentInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeUniversalIntent(input: string): Promise<ToolResult> {
+    return this.invokeTool("execute_intent", input);
+  }
+
+  /**
+   * Returns the registered pool adapter addresses from `swapRouterConfig`,
+   * or an empty record if none are configured.
+   */
+  getPoolAdapters(): Partial<Record<string, `0x${string}`>> {
+    if (!this.swapRouterConfig?.adapters) {
+      return {};
+    }
+    const result: Record<string, `0x${string}`> = {};
+    for (const [poolType, addr] of Object.entries(
+      this.swapRouterConfig.adapters,
+    )) {
+      if (addr) {
+        result[poolType] = addr;
+      }
+    }
+    return result;
   }
 
   // ── Legacy signer ────────────────────────────────────────────────────
@@ -409,7 +525,7 @@ export class ObiKit {
       if (tools.length === 0 && this.vaults.size > 0) {
         const opts = this.chainConfig
           ? { chainConfig: this.chainConfig }
-          : { chainConfig: { endpoint: 'not-connected' } as ChainConfig };
+          : { chainConfig: { endpoint: "not-connected" } as ChainConfig };
 
         tools.push(new VaultDepositTool(opts));
         tools.push(new VaultWithdrawTool(opts));
@@ -436,29 +552,43 @@ export class ObiKit {
     if (!tool) {
       return {
         success: false,
-        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(', ')}`,
+        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(", ")}`,
       };
     }
 
     const raw = await tool.invoke(input);
     try {
-      return JSON.parse(typeof raw === 'string' ? raw : String(raw)) as ToolResult;
+      return JSON.parse(
+        typeof raw === "string" ? raw : String(raw),
+      ) as ToolResult;
     } catch {
       return {
         success: true,
-        message: typeof raw === 'string' ? raw : String(raw),
+        message: typeof raw === "string" ? raw : String(raw),
       };
     }
   }
 
   inspect(): Record<string, unknown> {
     return {
-      mode: this.polkadotContext ? 'on-chain' : this.hubEvmContext ? 'evm' : 'offline',
+      mode: this.polkadotContext
+        ? "on-chain"
+        : this.hubEvmContext
+          ? "evm"
+          : "offline",
       chainConfig: this.chainConfig,
       hasPolkadotContext: this.polkadotContext !== undefined,
-      signerAddress: this.polkadotContext?.address ?? this.hubEvmContext?.account,
-      hasEvmVault: this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined,
+      signerAddress:
+        this.polkadotContext?.address ?? this.hubEvmContext?.account,
+      hasEvmVault:
+        this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined,
       evmVaultAddress: this.evmVaultConfig?.vaultAddress,
+      hasSwapRouter: this.swapRouterConfig !== undefined,
+      swapRouterAddress: this.swapRouterConfig?.routerAddress,
+      swapQuoterAddress: this.swapRouterConfig?.quoterAddress,
+      poolAdapterCount: this.swapRouterConfig?.adapters
+        ? Object.keys(this.swapRouterConfig.adapters).length
+        : 0,
       vaultCount: this.vaults.size,
       vaultIds: Array.from(this.vaults.keys()),
       satelliteCount: this.satellites.size,
@@ -486,10 +616,11 @@ export class ObiKit {
     const crossChainConfig: CrossChainConfig | undefined =
       satelliteArray.length > 0
         ? {
-            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? '',
-            routerAddress: satelliteArray[0]?.routerAddress ?? '',
+            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? "",
+            routerAddress: satelliteArray[0]?.routerAddress ?? "",
             satellites: satelliteArray,
-            evmContexts: this.evmContexts.size > 0 ? this.evmContexts : undefined,
+            evmContexts:
+              this.evmContexts.size > 0 ? this.evmContexts : undefined,
           }
         : undefined;
 
@@ -505,20 +636,25 @@ export class ObiKit {
 
   /**
    * Builds EVM vault tools when `hubEvmContext` + `evmVaultConfig` are available.
-   * Returns all 6 vault-specific tools:
+   * Returns all vault-specific tools plus swap/intent tools when configured:
    * - VaultDepositTool (ERC-4626 deposit)
    * - VaultWithdrawTool (ERC-4626 withdraw/redeem)
    * - WithdrawalQueueTool (queue request/fulfill/cancel/status)
    * - BatchStrategyTool (batch executeStrategies)
    * - PerformanceTool (read-only performance metrics)
    * - OracleCheckTool (read-only oracle/circuit breaker status)
+   * - SwapQuoteTool (read-only swap quotes, requires swapRouterConfig)
+   * - SwapExecuteTool (single-hop swap, requires swapRouterConfig)
+   * - SwapMultiHopTool (multi-hop swap, requires swapRouterConfig)
+   * - ExecuteLocalSwapTool (vault-routed on-hub swap)
+   * - ExecuteIntentTool (universal cross-chain intent)
    */
   private buildEvmVaultTools(): Tool[] {
     if (!this.hubEvmContext || !this.evmVaultConfig) {
       return [];
     }
 
-    return [
+    const tools: Tool[] = [
       new VaultDepositTool({
         evmContext: this.hubEvmContext,
         vaultConfig: this.evmVaultConfig,
@@ -543,7 +679,38 @@ export class ObiKit {
         evmContext: this.hubEvmContext,
         vaultConfig: this.evmVaultConfig,
       }),
+      new ExecuteLocalSwapTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new ExecuteIntentTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
     ];
+
+    // Add swap router tools when SwapRouter config is available
+    if (this.swapRouterConfig) {
+      tools.push(
+        new SwapQuoteTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          quoterAddress: this.swapRouterConfig.quoterAddress,
+        }),
+        new SwapExecuteTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          routerAddress: this.swapRouterConfig.routerAddress,
+        }),
+        new SwapMultiHopTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          routerAddress: this.swapRouterConfig.routerAddress,
+        }),
+      );
+    }
+
+    return tools;
   }
 
   private buildOfflineBifrostTools(): Tool[] {

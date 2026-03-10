@@ -1,15 +1,16 @@
 # Obidot Kit (obi-kit) — Agent Guidelines
 
 Open-source SDK monorepo for building AI agents on Polkadot. Provides LangChain
-tools for DeFi vault interaction, Bifrost strategies, and cross-chain operations.
+tools for DeFi vault interaction, DEX aggregator routing, Bifrost strategies,
+cross-chain operations, and universal intent execution.
 
 ## Repository Structure
 
 ```
 obi-kit/
 ├── packages/
-│   ├── core/         # Types, chain abstractions, EVM context, ABIs
-│   ├── llm/          # LangChain tool implementations (10 tools)
+│   ├── core/         # Types, chain abstractions, EVM context, ABIs (9 ABI modules)
+│   ├── llm/          # LangChain tool implementations (16 tools)
 │   ├── sdk/          # High-level ObiKit class combining core + llm
 │   └── cli/          # CLI for scaffolding and running agents
 ├── examples/
@@ -72,13 +73,13 @@ before the sdk typecheck will pass, because sdk resolves types from llm's `dist/
 
 ```typescript
 // 1. External packages
-import { Tool } from '@langchain/core/tools';
+import { Tool } from "@langchain/core/tools";
 
 // 2. Type-only imports (separate statement)
-import type { ChainConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
+import type { ChainConfig, ObiEvmContext, ToolResult } from "@obidot-kit/core";
 
 // 3. Local imports with .js extension
-import { ObiError } from '../errors.js';
+import { ObiError } from "../errors.js";
 ```
 
 ### Naming
@@ -103,8 +104,8 @@ All tools extend LangChain's `Tool` class (not `StructuredTool`):
 
 ```typescript
 export class MyTool extends Tool {
-  name = 'my_tool';
-  description = '...';
+  name = "my_tool";
+  description = "...";
 
   // Input comes as a JSON string — parse manually
   async _call(input: string): Promise<string> {
@@ -128,6 +129,7 @@ export class MyTool extends Tool {
 ### Section Headers
 
 Use comment bars mirroring Solidity style:
+
 ```typescript
 // ── Section Name ──────────────────────────────────────────────────────
 ```
@@ -154,6 +156,65 @@ describe('MyTool', () => {
   });
 });
 ```
+
+## Package Contents
+
+### @obidot-kit/core — ABIs
+
+9 ABI modules in `packages/core/src/abis/`:
+
+| Module               | Contract                                                        |
+| -------------------- | --------------------------------------------------------------- |
+| `obidot-vault`       | ObidotVault (ERC-4626 + IIntentSolver + SwapRouter integration) |
+| `swap-router`        | SwapRouter (single/multi-hop/split swaps, adapter registry)     |
+| `swap-quoter`        | SwapQuoter (read-only quotes, best route building)              |
+| `pool-adapter`       | IPoolAdapter (swap, getAmountOut, supportsPair)                 |
+| `bifrost-adapter`    | BifrostAdapter (SLP/SALP/DEX/Farming)                           |
+| `cross-chain-router` | CrossChainRouter (ISMP dispatch/receive)                        |
+| `satellite-vault`    | ObidotVaultEVM (EVM satellite)                                  |
+| `vault-cross-chain`  | Vault cross-chain subset ABI                                    |
+| `oracle-registry`    | OracleRegistry (multi-asset oracle)                             |
+
+### @obidot-kit/core — Types
+
+Key types in `packages/core/src/types.ts`:
+
+- **Vault:** `VaultConfig`, `EvmVaultConfig`, `DepositParams`, `WithdrawParams`, `StrategyIntent`, `StrategyRecord`
+- **DEX Aggregator:** `PoolType` enum (HydrationOmnipool, AssetHubPair, BifrostDEX, Custom), `Route`, `SwapParams`, `SplitLeg`, `Quote`, `SwapRouterConfig`, `POOL_TYPE_LABELS`
+- **Universal Intent:** `DestType` enum (Native, Hyper), `IntentAsset`, `Destination`, `UniversalIntent`
+- **Cross-Chain:** `CrossChainMessageType` enum, `SatelliteVaultConfig`, `CrossChainVaultState`, `SatelliteChainState`
+- **Bifrost:** `BifrostStrategyType` enum, `BifrostCurrencyId` enum, `BifrostYieldProduct`, `BifrostProtocolConfig`
+- **EVM Context:** `ObiEvmContext`, `ObiSwapRouterContext` (extends with swap router client + config)
+
+### @obidot-kit/llm — 16 Tools
+
+| Tool                      | Category    | Description                                          |
+| ------------------------- | ----------- | ---------------------------------------------------- |
+| `VaultDepositTool`        | Vault       | Deposit assets into ERC-4626 vault                   |
+| `VaultWithdrawTool`       | Vault       | Withdraw assets from vault                           |
+| `OracleCheckTool`         | Vault       | Check oracle price + staleness                       |
+| `PerformanceTool`         | Vault       | Fetch vault performance metrics                      |
+| `WithdrawalQueueTool`     | Vault       | Query withdrawal queue                               |
+| `BatchStrategyTool`       | Vault       | Execute batch strategy intents                       |
+| `BifrostYieldTool`        | Bifrost     | Fetch Bifrost yield products                         |
+| `BifrostStrategyTool`     | Bifrost     | Execute Bifrost strategies via XCM                   |
+| `CrossChainStateTool`     | Cross-Chain | Aggregate satellite vault states                     |
+| `CrossChainRebalanceTool` | Cross-Chain | Rebalance across chains                              |
+| `SwapQuoteTool`           | DEX         | Get best swap quote from pool adapters               |
+| `SwapExecuteTool`         | DEX         | Execute a swap through SwapRouter                    |
+| `SwapMultiHopTool`        | DEX         | Execute multi-hop swap routes                        |
+| `ExecuteLocalSwapTool`    | Intent      | Execute vault-routed local swap with strategy intent |
+| `ExecuteIntentTool`       | Intent      | Execute universal intent (cross-chain or local)      |
+
+### @obidot-kit/sdk — ObiKit Facade
+
+Key public methods on `ObiKit`:
+
+- **Vault:** `registerVault()`, `getTools()`, `inspect()`
+- **EVM:** `registerEvmVault()`, `buildEvmVaultTools()` (returns 11 tools: 6 vault + 2 intent + 3 swap)
+- **Swap Router:** `registerSwapRouter()`, `getSwapRouterConfig()`, `getSwapQuote()`, `executeSwap()`, `executeMultiHopSwap()`, `executeLocalSwap()`, `executeUniversalIntent()`, `getPoolAdapters()`
+- **Cross-Chain:** `registerSatelliteVault()`, `buildCrossChainTools()`
+- **Bifrost:** `registerBifrost()`, `buildBifrostTools()`
 
 ## Key Gotchas
 

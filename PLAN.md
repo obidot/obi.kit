@@ -1,3 +1,9 @@
+## Status: ✅ Complete (v0.1.0)
+
+All tasks in this plan have been implemented. 225 tests pass. For the v0.2.0 rebuild (real contract connections, new tools, improved architecture), see [`tasks/obi-kit-rebuild-plan.md`](./tasks/obi-kit-rebuild-plan.md).
+
+---
+
 ## System Prompt: Update `obi-kit` for Cross-Chain + Bifrost Support
 
 You are updating the `obi-kit` SDK (obi-kit) to support the cross-chain Hyperbridge + Bifrost DeFi features that have been implemented in the `obidot` monorepo (obidot). The goal is to extract and generalize the new capabilities from the obidot agent module into reusable SDK packages.
@@ -5,6 +11,7 @@ You are updating the `obi-kit` SDK (obi-kit) to support the cross-chain Hyperbri
 ### Context
 
 The obidot monorepo now has:
+
 - **12 new Solidity contracts** for cross-chain vault operations (Hyperbridge ISMP) and Bifrost DeFi (SLP, DEX, Farming, SALP)
 - **6 LangChain tools** in the agent module: `fetch_yields`, `fetch_vault_state`, `execute_strategy`, `fetch_bifrost_yields`, `fetch_cross_chain_state`, `execute_bifrost_strategy`
 - **New services**: `CrossChainService` (multi-chain state aggregation), `BifrostYieldService` (7 Bifrost products), extended `SignerService` (BifrostAdapter writeContract)
@@ -41,17 +48,26 @@ Add these types/interfaces (reference index.ts in obidot repo):
 ```typescript
 // Bifrost strategy type enum (matches BifrostAdapter.sol)
 export enum BifrostStrategyType {
-  MintVToken = 0, RedeemVToken = 1, DEXSwap = 2,
-  FarmDeposit = 3, FarmWithdraw = 4, FarmClaim = 5, SALPContribute = 6,
+  MintVToken = 0,
+  RedeemVToken = 1,
+  DEXSwap = 2,
+  FarmDeposit = 3,
+  FarmWithdraw = 4,
+  FarmClaim = 5,
+  SALPContribute = 6,
 }
 
 // Bifrost currency IDs
 export enum BifrostCurrencyId {
-  DOT = 0, vDOT = 1, KSM = 2, vKSM = 3, BNC = 4,
+  DOT = 0,
+  vDOT = 1,
+  KSM = 2,
+  vKSM = 3,
+  BNC = 4,
 }
 
 // Human-readable labels
-export const BIFROST_STRATEGY_LABELS: Record<BifrostStrategyType, string>
+export const BIFROST_STRATEGY_LABELS: Record<BifrostStrategyType, string>;
 
 // Satellite vault config (extends VaultConfig)
 export interface SatelliteVaultConfig extends VaultConfig {
@@ -93,9 +109,13 @@ export interface BifrostYieldProduct {
 
 // Cross-chain message types (for ISMP)
 export enum CrossChainMessageType {
-  DEPOSIT_SYNC = 1, WITHDRAW_REQUEST = 2, ASSET_SYNC = 3,
-  STRATEGY_REPORT = 4, EMERGENCY_SYNC = 5,
-  DEPOSIT_ACK = 6, WITHDRAW_FULFILL = 7,
+  DEPOSIT_SYNC = 1,
+  WITHDRAW_REQUEST = 2,
+  ASSET_SYNC = 3,
+  STRATEGY_REPORT = 4,
+  EMERGENCY_SYNC = 5,
+  DEPOSIT_ACK = 6,
+  WITHDRAW_FULFILL = 7,
 }
 
 // Bifrost protocol registry entry
@@ -125,6 +145,7 @@ export class SatelliteVaultError extends ObiKitError {
 #### 3. `@obidot-kit/core` — Contract ABIs (packages/core/src/abis/)
 
 Create a new `abis/` directory exporting typed ABI constants for:
+
 - `BIFROST_ADAPTER_ABI` — `previewStrategy`, `executeBifrostStrategy` functions
 - `CROSS_CHAIN_ROUTER_ABI` — `broadcastAssetSync`, `satelliteChains`, `paused` functions
 - `SATELLITE_VAULT_ABI` — `totalAssets`, `globalTotalAssets`, `emergencyMode`, `lastSyncTimestamp`, `paused` functions
@@ -151,8 +172,10 @@ export interface CreateEvmContextOptions {
   chainName: string;
 }
 
-export function createEvmContext(options: CreateEvmContextOptions): ObiEvmContext
-export function destroyEvmContext(ctx: ObiEvmContext): void
+export function createEvmContext(
+  options: CreateEvmContextOptions,
+): ObiEvmContext;
+export function destroyEvmContext(ctx: ObiEvmContext): void;
 ```
 
 Add `viem` as a peer dependency of `@obidot-kit/core`.
@@ -161,12 +184,12 @@ Add `viem` as a peer dependency of `@obidot-kit/core`.
 
 Create 4 new tool files extending `ObiBaseTool` or LangChain `Tool`:
 
-| File | Class | Tool Name | Description |
-|------|-------|-----------|-------------|
-| `bifrost-yield.ts` | `BifrostYieldTool` | `fetch_bifrost_yields` | Returns yield rates for all 7 Bifrost products |
-| `bifrost-strategy.ts` | `BifrostStrategyTool` | `execute_bifrost_strategy` | Executes a Bifrost DeFi operation via BifrostAdapter contract |
-| `cross-chain-state.ts` | `CrossChainStateTool` | `fetch_cross_chain_state` | Aggregates state from hub + all satellite vaults |
-| `cross-chain-rebalance.ts` | `CrossChainRebalanceTool` | `execute_cross_chain_rebalance` | Triggers ISMP messages for hub↔satellite fund movement |
+| File                       | Class                     | Tool Name                       | Description                                                   |
+| -------------------------- | ------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| `bifrost-yield.ts`         | `BifrostYieldTool`        | `fetch_bifrost_yields`          | Returns yield rates for all 7 Bifrost products                |
+| `bifrost-strategy.ts`      | `BifrostStrategyTool`     | `execute_bifrost_strategy`      | Executes a Bifrost DeFi operation via BifrostAdapter contract |
+| `cross-chain-state.ts`     | `CrossChainStateTool`     | `fetch_cross_chain_state`       | Aggregates state from hub + all satellite vaults              |
+| `cross-chain-rebalance.ts` | `CrossChainRebalanceTool` | `execute_cross_chain_rebalance` | Triggers ISMP messages for hub↔satellite fund movement        |
 
 Reference implementations: tools.ts (obidot repo). Generalize by accepting services/config through constructor injection rather than hard-coded constants.
 
@@ -175,6 +198,7 @@ Update index.ts to re-export all new tools.
 #### 6. `@obidot-kit/llm` — Update `ObiAgentApi` (packages/llm/src/obi-agent-api.ts)
 
 Add methods:
+
 - `getBifrostTools(): Tool[]` — return Bifrost-specific tools
 - `getCrossChainTools(): Tool[]` — return cross-chain-specific tools
 - Extend `getAllTools()` to include Bifrost + cross-chain tools when configured
@@ -182,6 +206,7 @@ Add methods:
 #### 7. `@obidot-kit/sdk` — Extend `ObiKit` Class (packages/sdk/src/obi-kit.ts)
 
 Extend `ObiKitConfig`:
+
 ```typescript
 export interface ObiKitConfig {
   chainConfig?: ChainConfig;
@@ -199,6 +224,7 @@ export interface ObiKitConfig {
 ```
 
 Add methods to `ObiKit`:
+
 ```typescript
 registerSatelliteVault(config: SatelliteVaultConfig): void
 removeSatelliteVault(chainName: string): void
@@ -213,6 +239,7 @@ Extend `getTools()` to auto-include Bifrost and cross-chain tools when `bifrostC
 #### 8. Examples — New Cross-Chain Agent Example
 
 Create `examples/cross-chain-agent/` with:
+
 - package.json — deps on `@obidot-kit/sdk`, `viem`
 - `.env.example` — required env vars (RPC URLs, contract addresses)
 - index.ts — demonstrates:
@@ -224,6 +251,7 @@ Create `examples/cross-chain-agent/` with:
 #### 9. Tests
 
 Write Vitest tests for each new component:
+
 - `packages/core/test/types.test.ts` — validate enums, type guards
 - `packages/core/test/evm.test.ts` — context creation/destruction
 - `packages/llm/test/bifrost-yield.test.ts` — tool invocation with mock data
@@ -234,6 +262,7 @@ Write Vitest tests for each new component:
 #### 10. Package Dependencies
 
 Update package.json files:
+
 - `@obidot-kit/core`: add `viem` as `peerDependency`
 - `@obidot-kit/llm`: already has `@langchain/core` and `zod`
 - `@obidot-kit/sdk`: no new deps (inherits through workspace)
@@ -243,23 +272,24 @@ Update package.json files:
 
 When implementing, reference these files for exact types, ABIs, and logic:
 
-| File | What to Extract |
-|------|----------------|
-| index.ts | Enums, Zod schemas, type definitions |
-| constants.ts | ABIs, protocol registry, chain configs |
-| env.ts | Environment variable patterns |
-| crosschain.service.ts | Multi-chain state aggregation logic |
-| yield.service.ts | Bifrost yield product definitions |
-| signer.service.ts | BifrostAdapter writeContract patterns |
-| tools.ts | All 6 tool implementations |
-| systemPrompt.ts | Bifrost product descriptions, risk rules |
-| BifrostAdapter.sol | On-chain ABI reference |
-| CrossChainRouter.sol | On-chain ABI reference |
-| ObidotVaultEVM.sol | Satellite vault ABI reference |
+| File                  | What to Extract                          |
+| --------------------- | ---------------------------------------- |
+| index.ts              | Enums, Zod schemas, type definitions     |
+| constants.ts          | ABIs, protocol registry, chain configs   |
+| env.ts                | Environment variable patterns            |
+| crosschain.service.ts | Multi-chain state aggregation logic      |
+| yield.service.ts      | Bifrost yield product definitions        |
+| signer.service.ts     | BifrostAdapter writeContract patterns    |
+| tools.ts              | All 6 tool implementations               |
+| systemPrompt.ts       | Bifrost product descriptions, risk rules |
+| BifrostAdapter.sol    | On-chain ABI reference                   |
+| CrossChainRouter.sol  | On-chain ABI reference                   |
+| ObidotVaultEVM.sol    | Satellite vault ABI reference            |
 
 ### Verification Checklist
 
 After all changes:
+
 1. `pnpm build` — all packages compile
 2. `pnpm typecheck` — 0 type errors
 3. `pnpm test` — all tests pass

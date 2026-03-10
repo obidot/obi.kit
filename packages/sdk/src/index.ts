@@ -43,6 +43,10 @@ export {
   type StrategyIntent,
   type StrategyRecord,
   StrategyStatus,
+  SWAP_QUOTER_ABI,
+  SWAP_ROUTER_ABI,
+  POOL_ADAPTER_ABI,
+  type SwapRouterConfig,
   ToolInputValidationError,
   type ToolResult,
   type TransactionSigner,
@@ -56,7 +60,20 @@ export {
   XCM_PRECOMPILE_ADDRESS,
   XcmError,
   type XcmTransferParams,
-} from '@obidot-kit/core';
+  PoolType,
+  POOL_TYPE_LABELS,
+  type Route,
+  type SwapParams,
+  type SplitLeg,
+  type Quote,
+  DestType,
+  type IntentAsset,
+  type Destination,
+  type UniversalIntent,
+  type CreateSwapRouterContextOptions,
+  type ObiSwapRouterContext,
+  createSwapRouterContext,
+} from "@obidot-kit/core";
 // Re-export llm types with explicit renames to avoid conflicts
 export type {
   AgentConfig as LlmAgentConfig,
@@ -75,19 +92,30 @@ export type {
   CrossChainRebalanceToolOptions,
   CrossChainStateInput,
   CrossChainStateToolOptions,
+  ExecuteIntentInput,
+  ExecuteIntentToolOptions,
+  ExecuteLocalSwapInput,
+  ExecuteLocalSwapToolOptions,
   ObiAgentApiConfig,
   ObiBaseToolOptions,
   OracleCheckInput,
   OracleCheckToolOptions,
   PerformanceInput,
   PerformanceToolOptions,
+  RouteHop,
+  SwapExecuteInput,
+  SwapExecuteToolOptions,
+  SwapMultiHopInput,
+  SwapMultiHopToolOptions,
+  SwapQuoteInput,
+  SwapQuoteToolOptions,
   VaultDepositInput,
   VaultDepositToolOptions,
   VaultWithdrawInput,
   VaultWithdrawToolOptions,
   WithdrawalQueueInput,
   WithdrawalQueueToolOptions,
-} from '@obidot-kit/llm';
+} from "@obidot-kit/llm";
 
 export {
   BatchStrategyTool,
@@ -97,15 +125,20 @@ export {
   CrossChainStateTool,
   createAgent,
   createAgentWithTools,
+  ExecuteIntentTool,
+  ExecuteLocalSwapTool,
   ObiAgentApi,
   ObiBaseTool,
   OracleCheckTool,
   PerformanceTool,
+  SwapExecuteTool,
+  SwapMultiHopTool,
+  SwapQuoteTool,
   VaultDepositTool,
   VaultWithdrawTool,
   WithdrawalQueueTool,
-} from '@obidot-kit/llm';
+} from "@obidot-kit/llm";
 
 // SDK facade
-export type { ObiKitConfig } from './obi-kit.js';
-export { ObiKit } from './obi-kit.js';
+export type { ObiKitConfig } from "./obi-kit.js";
+export { ObiKit } from "./obi-kit.js";

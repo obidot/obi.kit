@@ -1,0 +1,23 @@
+{
+  "name": "@obidot-kit/example-discord",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example: Discord bot powered by obi-kit for DeFi vault interactions",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*",
+    "@obidot-kit/core": "workspace:*",
+    "@obidot-kit/llm": "workspace:*",
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.5.0",
+    "discord.js": "^14.18.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

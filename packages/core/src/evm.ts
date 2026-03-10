@@ -14,7 +14,9 @@ import {
   http,
   type PublicClient,
   type WalletClient,
-} from 'viem';
+} from "viem";
+
+import type { PoolType } from "./types.js";
 
 // ── Obi EVM context types ───────────────────────────────────────────────
 
@@ -89,7 +91,9 @@ export interface CreateEvmContextOptions {
  * });
  * ```
  */
-export function createEvmContext(options: CreateEvmContextOptions): ObiEvmContext {
+export function createEvmContext(
+  options: CreateEvmContextOptions,
+): ObiEvmContext {
   const transport = http(options.rpcUrl);
 
   const client = createPublicClient({
@@ -125,4 +129,61 @@ export function createEvmContext(options: CreateEvmContextOptions): ObiEvmContex
 export function destroyEvmContext(_ctx: ObiEvmContext): void {
   // HTTP transports are stateless — nothing to clean up.
   // If we later support WebSocket transports, close the socket here.
+}
+
+// ── Swap Router Context ─────────────────────────────────────────────────
+
+/**
+ * Extended EVM context that includes SwapRouter and SwapQuoter contract
+ * addresses for DEX aggregation operations on Polkadot Hub.
+ */
+export interface ObiSwapRouterContext extends ObiEvmContext {
+  /** SwapRouter contract address */
+  readonly swapRouterAddress: `0x${string}`;
+  /** SwapQuoter contract address */
+  readonly quoterAddress: `0x${string}`;
+  /** Optional: known pool adapter addresses keyed by PoolType */
+  readonly adapters?: Partial<Record<PoolType, `0x${string}`>>;
+}
+
+/**
+ * Options accepted when constructing an `ObiSwapRouterContext`.
+ */
+export interface CreateSwapRouterContextOptions extends CreateEvmContextOptions {
+  /** SwapRouter contract address */
+  readonly swapRouterAddress: `0x${string}`;
+  /** SwapQuoter contract address */
+  readonly quoterAddress: `0x${string}`;
+  /** Optional: known pool adapter addresses keyed by PoolType */
+  readonly adapters?: Partial<Record<PoolType, `0x${string}`>>;
+}
+
+/**
+ * Creates an EVM context with SwapRouter/SwapQuoter addresses bundled in.
+ *
+ * @example
+ * ```ts
+ * import { createSwapRouterContext } from '@obidot-kit/core';
+ * import { polkadotHubTestnet } from '@obidot-kit/core';
+ *
+ * const ctx = createSwapRouterContext({
+ *   rpcUrl: 'https://eth-rpc-testnet.polkadot.io/',
+ *   chain: polkadotHubTestnet,
+ *   chainName: 'Polkadot Hub TestNet',
+ *   swapRouterAddress: '0x...',
+ *   quoterAddress: '0x...',
+ * });
+ * ```
+ */
+export function createSwapRouterContext(
+  options: CreateSwapRouterContextOptions,
+): ObiSwapRouterContext {
+  const base = createEvmContext(options);
+
+  return {
+    ...base,
+    swapRouterAddress: options.swapRouterAddress,
+    quoterAddress: options.quoterAddress,
+    adapters: options.adapters,
+  };
 }
