@@ -32,5 +32,8 @@
     "typescript": "^5.8.3",
     "viem": "^2.21.0",
     "vitest": "^3.2.3"
+  },
+  "dependencies": {
+    "@galacticcouncil/api-augment": "^0.9.0"
   }
 }

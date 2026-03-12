@@ -1,23 +1,38 @@
-import type { Tool } from '@langchain/core/tools';
+import type { Tool } from "@langchain/core/tools";
 import type {
   ChainConfig,
+  EvmVaultConfig,
   ObiEvmContext,
   ObiPolkadotContext,
   SatelliteVaultConfig,
+  SwapRouterConfig,
   ToolResult,
   TransactionSigner,
   VaultConfig,
-} from '@obidot-kit/core';
-import type { BifrostConfig, CrossChainConfig, ObiAgentApiConfig } from '@obidot-kit/llm';
+} from "@obidot-kit/core";
+import type {
+  BifrostConfig,
+  CrossChainConfig,
+  ObiAgentApiConfig,
+} from "@obidot-kit/llm";
 import {
+  BatchStrategyTool,
   BifrostStrategyTool,
   BifrostYieldTool,
   CrossChainRebalanceTool,
   CrossChainStateTool,
+  ExecuteIntentTool,
+  ExecuteLocalSwapTool,
   ObiAgentApi,
+  OracleCheckTool,
+  PerformanceTool,
+  SwapExecuteTool,
+  SwapMultiHopTool,
+  SwapQuoteTool,
   VaultDepositTool,
   VaultWithdrawTool,
-} from '@obidot-kit/llm';
+  WithdrawalQueueTool,
+} from "@obidot-kit/llm";
 
 /**
  * Configuration options for initializing the ObiKit SDK.
@@ -63,6 +78,26 @@ export interface ObiKitConfig {
    * cross-chain tools to read satellite vault state on remote EVM chains.
    */
   readonly evmContexts?: Map<string, ObiEvmContext>;
+
+  /**
+   * EVM context for the hub vault (Polkadot Hub EVM).
+   * When provided with `evmVaultConfig`, enables real ERC-4626 vault
+   * operations (deposit, withdraw, performance, oracle, withdrawal queue).
+   */
+  readonly hubEvmContext?: ObiEvmContext;
+
+  /**
+   * ObidotVault ERC-4626 configuration on Polkadot Hub EVM.
+   * Required alongside `hubEvmContext` for live vault operations.
+   */
+  readonly evmVaultConfig?: EvmVaultConfig;
+
+  /**
+   * Optional SwapRouter/SwapQuoter configuration. When provided with
+   * `hubEvmContext`, enables on-hub DEX aggregator tools (swap quote,
+   * swap execute, multi-hop swap).
+   */
+  readonly swapRouterConfig?: SwapRouterConfig;
 }
 
 /**
@@ -71,59 +106,48 @@ export interface ObiKitConfig {
  * Provides a unified API surface that combines `@obidot-kit/core` and
  * `@obidot-kit/llm` into a single, easy-to-use entry point.
  *
- * Supports two modes of operation:
+ * Supports three modes of operation:
  *
  * 1. **Offline / stub mode** — constructed with `chainConfig` only.
  *    Vault tools return "pending" stub results. Ideal for testing,
  *    prompt engineering, and offline development.
  *
- * 2. **On-chain mode** — constructed with an `ObiPolkadotContext`.
+ * 2. **EVM mode** — constructed with `hubEvmContext` + `evmVaultConfig`.
+ *    All vault tools interact with the real ObidotVault ERC-4626 contract
+ *    on Polkadot Hub EVM via viem. Supports deposits, withdrawals,
+ *    withdrawal queue, batch strategies, performance metrics, and oracle checks.
+ *
+ * 3. **On-chain mode** — constructed with an `ObiPolkadotContext`.
  *    The full suite of Polkadot Agent Kit tools (balance, transfer,
  *    XCM, staking, identity, swap, etc.) is available alongside
  *    obi-kit vault tools, all wired to a live `PolkadotApi` and
  *    `PolkadotSigner`.
  *
- * Additionally supports:
- *
- * - **Bifrost DeFi tools** — when `bifrostConfig` is provided, yield
- *   and strategy tools are automatically included.
- * - **Cross-chain tools** — when `satellites` are registered, state
- *   aggregation and rebalance tools are automatically included.
- *
  * @example
  * ```ts
- * // Offline mode
+ * // EVM mode — real ObidotVault interactions
  * import { ObiKit } from '@obidot-kit/sdk';
+ * import { createEvmContext, polkadotHubTestnet, POLKADOT_HUB_TESTNET_RPC } from '@obidot-kit/core';
+ * import { privateKeyToAccount } from 'viem/accounts';
  *
- * const kit = new ObiKit({
- *   chainConfig: { endpoint: 'wss://rpc.polkadot.io', chainId: 'polkadot' },
- * });
- * const tools = kit.getTools();
- * ```
- *
- * @example
- * ```ts
- * // On-chain mode with PAK integration
- * import { ObiKit } from '@obidot-kit/sdk';
- * import { createPolkadotContext } from '@obidot-kit/core';
- *
- * const ctx = await createPolkadotContext({
- *   signer,
- *   address: '5GrwvaEF...',
- *   allowedChains: ['polkadot'],
+ * const account = privateKeyToAccount('0x...');
+ * const hubCtx = createEvmContext({
+ *   rpcUrl: POLKADOT_HUB_TESTNET_RPC,
+ *   chain: polkadotHubTestnet,
+ *   chainName: 'Polkadot Hub Testnet',
+ *   account,
  * });
  *
  * const kit = new ObiKit({
- *   polkadotContext: ctx,
- *   vaults: [myVaultConfig],
- *   satellites: [moonbeamSatellite],
- *   bifrostConfig: {
- *     adapterAddress: '0x1234...',
- *     protocols: { slp: { palletIndex: 100, name: 'SLP', protocol: 'Bifrost' } },
+ *   hubEvmContext: hubCtx,
+ *   evmVaultConfig: {
+ *     vaultAddress: '0x...',
+ *     assetAddress: '0x...',
+ *     rpcUrl: POLKADOT_HUB_TESTNET_RPC,
+ *     chainId: 420420417,
  *   },
  * });
  *
- * // Get all tools (PAK + vault + Bifrost + cross-chain)
  * const tools = kit.getTools();
  * ```
  */
@@ -137,6 +161,9 @@ export class ObiKit {
   private signer: TransactionSigner | undefined;
   private bifrostConfig: BifrostConfig | undefined;
   private readonly evmContexts: Map<string, ObiEvmContext>;
+  private hubEvmContext: ObiEvmContext | undefined;
+  private evmVaultConfig: EvmVaultConfig | undefined;
+  private swapRouterConfig: SwapRouterConfig | undefined;
 
   constructor(config: ObiKitConfig) {
     this.chainConfig = config.chainConfig;
@@ -147,6 +174,9 @@ export class ObiKit {
     this.signer = config.signer;
     this.bifrostConfig = config.bifrostConfig;
     this.evmContexts = new Map(config.evmContexts ?? []);
+    this.hubEvmContext = config.hubEvmContext;
+    this.evmVaultConfig = config.evmVaultConfig;
+    this.swapRouterConfig = config.swapRouterConfig;
 
     if (config.vaults) {
       for (const vault of config.vaults) {
@@ -177,14 +207,7 @@ export class ObiKit {
    * full PAK tool suite (balance, transfer, XCM, staking, identity,
    * swap, etc.) alongside the obi-kit vault tools.
    *
-   * In offline / stub mode this is a no-op.
-   *
-   * @example
-   * ```ts
-   * const kit = new ObiKit({ polkadotContext: ctx, vaults: [myVault] });
-   * await kit.connect();          // loads PAK tools
-   * const tools = kit.getTools(); // PAK + vault tools
-   * ```
+   * In offline / EVM-only mode this is a no-op.
    */
   async connect(): Promise<void> {
     if (this.agentApi) {
@@ -206,92 +229,174 @@ export class ObiKit {
 
   // ── Chain configuration ──────────────────────────────────────────────
 
-  /**
-   * Returns the current chain configuration.
-   * May be `undefined` when only a `polkadotContext` was supplied.
-   */
   getChainConfig(): ChainConfig | undefined {
     return this.chainConfig;
   }
 
-  /**
-   * Update the chain configuration at runtime (e.g. switch networks).
-   */
   setChainConfig(config: ChainConfig): void {
     this.chainConfig = config;
   }
 
-  /**
-   * Returns `true` when PAK tools have been successfully loaded via
-   * {@link connect}.
-   */
   isPakReady(): boolean {
     return this.agentApi?.isPakInitialised() ?? false;
   }
 
   // ── Polkadot context ─────────────────────────────────────────────────
 
-  /**
-   * Returns the Polkadot context, if one was provided.
-   */
   getPolkadotContext(): ObiPolkadotContext | undefined {
     return this.polkadotContext;
   }
 
-  /**
-   * Returns `true` when the SDK is wired for real on-chain interactions.
-   */
   isOnChainMode(): boolean {
     return this.polkadotContext !== undefined;
   }
 
   /**
-   * Replace or set the Polkadot context at runtime.
-   * This rebuilds the internal `ObiAgentApi` with the new context.
-   *
-   * **Note:** You must call {@link connect} again after this to load
-   * PAK tools for the new context.
+   * Returns `true` when the SDK has an EVM context for the hub vault.
    */
+  isEvmMode(): boolean {
+    return (
+      this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined
+    );
+  }
+
   setPolkadotContext(ctx: ObiPolkadotContext): void {
     this.polkadotContext = ctx;
     this.rebuildAgentApi();
   }
 
-  /**
-   * Returns the ObiAgentApi instance, if the SDK is in on-chain mode.
-   * Gives access to PAK tools, vault tools, and the underlying context.
-   */
   getAgentApi(): ObiAgentApi | undefined {
     return this.agentApi;
   }
 
-  // ── Legacy signer ────────────────────────────────────────────────────
+  // ── EVM Vault configuration ──────────────────────────────────────────
 
   /**
-   * The transaction signer, if one was provided.
-   * @deprecated Prefer `getPolkadotContext()` for the `PolkadotSigner`.
+   * Set or replace the hub EVM context and vault config for real
+   * ObidotVault interactions.
    */
+  setEvmVault(ctx: ObiEvmContext, config: EvmVaultConfig): void {
+    this.hubEvmContext = ctx;
+    this.evmVaultConfig = config;
+  }
+
+  getEvmVaultConfig(): EvmVaultConfig | undefined {
+    return this.evmVaultConfig;
+  }
+
+  getHubEvmContext(): ObiEvmContext | undefined {
+    return this.hubEvmContext;
+  }
+
+  // ── SwapRouter configuration ─────────────────────────────────────────
+
+  /**
+   * Register (or replace) the SwapRouter/SwapQuoter configuration.
+   */
+  registerSwapRouter(config: SwapRouterConfig): void {
+    this.swapRouterConfig = config;
+  }
+
+  /**
+   * Returns the current SwapRouter configuration, if set.
+   */
+  getSwapRouterConfig(): SwapRouterConfig | undefined {
+    return this.swapRouterConfig;
+  }
+
+  /**
+   * Convenience: get a swap quote from the SwapQuoter contract.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.quoterAddress`.
+   *
+   * @param input - JSON string matching `SwapQuoteInput`
+   * @returns Parsed `ToolResult` with quote data
+   */
+  async getSwapQuote(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_quote", input);
+  }
+
+  /**
+   * Convenience: execute a single-hop swap via the SwapRouter.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.routerAddress`.
+   *
+   * @param input - JSON string matching `SwapExecuteInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_execute", input);
+  }
+
+  /**
+   * Convenience: execute a multi-hop swap via the SwapRouter.
+   *
+   * Requires `hubEvmContext` and `swapRouterConfig.routerAddress`.
+   *
+   * @param input - JSON string matching `SwapMultiHopInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeMultiHopSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("swap_multi_hop", input);
+  }
+
+  /**
+   * Convenience: execute a vault-routed on-hub swap with EIP-712 auth.
+   *
+   * Requires `hubEvmContext` and `evmVaultConfig`.
+   *
+   * @param input - JSON string matching `ExecuteLocalSwapInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeLocalSwap(input: string): Promise<ToolResult> {
+    return this.invokeTool("execute_local_swap", input);
+  }
+
+  /**
+   * Convenience: execute a universal intent for cross-chain routing.
+   *
+   * Requires `hubEvmContext` and `evmVaultConfig`.
+   *
+   * @param input - JSON string matching `ExecuteIntentInput`
+   * @returns Parsed `ToolResult` with transaction hash
+   */
+  async executeUniversalIntent(input: string): Promise<ToolResult> {
+    return this.invokeTool("execute_intent", input);
+  }
+
+  /**
+   * Returns the registered pool adapter addresses from `swapRouterConfig`,
+   * or an empty record if none are configured.
+   */
+  getPoolAdapters(): Partial<Record<string, `0x${string}`>> {
+    if (!this.swapRouterConfig?.adapters) {
+      return {};
+    }
+    const result: Record<string, `0x${string}`> = {};
+    for (const [poolType, addr] of Object.entries(
+      this.swapRouterConfig.adapters,
+    )) {
+      if (addr) {
+        result[poolType] = addr;
+      }
+    }
+    return result;
+  }
+
+  // ── Legacy signer ────────────────────────────────────────────────────
+
+  /** @deprecated Prefer `getPolkadotContext()` for the `PolkadotSigner`. */
   getSigner(): TransactionSigner | undefined {
     return this.signer;
   }
 
-  /**
-   * Set or replace the transaction signer.
-   * @deprecated Prefer `setPolkadotContext()` with a `PolkadotSigner`.
-   */
+  /** @deprecated Prefer `setPolkadotContext()` with a `PolkadotSigner`. */
   setSigner(signer: TransactionSigner): void {
     this.signer = signer;
   }
 
   // ── Vault registry ───────────────────────────────────────────────────
 
-  /**
-   * Register a vault so it is available to the agent.
-   *
-   * If in on-chain mode, the agent API is rebuilt to include the new
-   * vault. **Note:** PAK tools are reset; call {@link connect} again
-   * to reload them.
-   */
   registerVault(vault: VaultConfig): this {
     this.vaults.set(vault.id, vault);
     if (this.polkadotContext) {
@@ -300,12 +405,6 @@ export class ObiKit {
     return this;
   }
 
-  /**
-   * Remove a previously registered vault.
-   *
-   * **Note:** In on-chain mode, PAK tools are reset. Call
-   * {@link connect} again to reload them.
-   */
   removeVault(vaultId: string): boolean {
     const removed = this.vaults.delete(vaultId);
     if (removed && this.polkadotContext) {
@@ -314,29 +413,16 @@ export class ObiKit {
     return removed;
   }
 
-  /**
-   * Get a vault by its ID.
-   */
   getVault(vaultId: string): VaultConfig | undefined {
     return this.vaults.get(vaultId);
   }
 
-  /**
-   * List all registered vaults.
-   */
   listVaults(): ReadonlyArray<VaultConfig> {
     return Array.from(this.vaults.values());
   }
 
   // ── Satellite vault registry ─────────────────────────────────────────
 
-  /**
-   * Register a satellite vault so it is available to cross-chain tools.
-   *
-   * If in on-chain mode, the agent API is rebuilt to include the new
-   * satellite. **Note:** PAK tools are reset; call {@link connect}
-   * again to reload them.
-   */
   registerSatelliteVault(config: SatelliteVaultConfig): void {
     const key = config.chain.name ?? config.id;
     this.satellites.set(key, config);
@@ -345,12 +431,6 @@ export class ObiKit {
     }
   }
 
-  /**
-   * Remove a previously registered satellite vault by chain name.
-   *
-   * **Note:** In on-chain mode, PAK tools are reset. Call
-   * {@link connect} again to reload them.
-   */
   removeSatelliteVault(chainName: string): boolean {
     const removed = this.satellites.delete(chainName);
     if (removed && this.polkadotContext) {
@@ -359,19 +439,12 @@ export class ObiKit {
     return removed;
   }
 
-  /**
-   * List all registered satellite vaults.
-   */
   getSatelliteVaults(): SatelliteVaultConfig[] {
     return Array.from(this.satellites.values());
   }
 
   // ── EVM context management ───────────────────────────────────────────
 
-  /**
-   * Add an EVM context for a specific chain, enabling live on-chain
-   * reads for satellite vaults deployed on that chain.
-   */
   addEvmContext(chainName: string, ctx: ObiEvmContext): void {
     this.evmContexts.set(chainName, ctx);
     if (this.polkadotContext) {
@@ -379,9 +452,6 @@ export class ObiKit {
     }
   }
 
-  /**
-   * Remove an EVM context by chain name.
-   */
   removeEvmContext(chainName: string): boolean {
     const removed = this.evmContexts.delete(chainName);
     if (removed && this.polkadotContext) {
@@ -390,18 +460,12 @@ export class ObiKit {
     return removed;
   }
 
-  /**
-   * Returns all registered EVM contexts keyed by chain name.
-   */
   getEvmContexts(): Map<string, ObiEvmContext> {
     return new Map(this.evmContexts);
   }
 
   // ── Custom tools ─────────────────────────────────────────────────────
 
-  /**
-   * Add a custom LangChain tool that will be included in `getTools()`.
-   */
   addTool(tool: Tool): this {
     this.customTools.push(tool);
     return this;
@@ -409,14 +473,6 @@ export class ObiKit {
 
   // ── Bifrost tool accessors ───────────────────────────────────────────
 
-  /**
-   * Returns Bifrost-specific tools (yield fetching and strategy execution).
-   *
-   * In **on-chain mode** these come from the `ObiAgentApi`.
-   * In **offline mode** they are created directly from `bifrostConfig`.
-   *
-   * Returns an empty array if no `bifrostConfig` was provided.
-   */
   getBifrostTools(): Tool[] {
     if (this.agentApi) {
       return [...this.agentApi.getBifrostTools()] as Tool[];
@@ -424,14 +480,6 @@ export class ObiKit {
     return this.buildOfflineBifrostTools();
   }
 
-  /**
-   * Returns cross-chain-specific tools (state aggregation and rebalancing).
-   *
-   * In **on-chain mode** these come from the `ObiAgentApi`.
-   * In **offline mode** they are created directly from satellite config.
-   *
-   * Returns an empty array if no satellites are configured.
-   */
   getCrossChainTools(): Tool[] {
     if (this.agentApi) {
       return [...this.agentApi.getCrossChainTools()] as Tool[];
@@ -444,34 +492,40 @@ export class ObiKit {
   /**
    * Returns all available tools.
    *
+   * In **EVM mode** this includes:
+   * - EVM vault tools (deposit, withdraw, withdrawal queue, performance, oracle)
+   * - Batch strategy tool
+   * - Bifrost tools (if `bifrostConfig` is provided)
+   * - Cross-chain tools (if satellites are registered)
+   * - Any custom tools
+   *
    * In **on-chain mode** this includes:
-   * - All PAK tools (balance, transfer, XCM, staking, identity, swap, etc.)
-   * - Obi-kit vault tools (deposit, withdraw) — if vaults are registered
-   * - Bifrost tools (yield, strategy) — if `bifrostConfig` is provided
-   * - Cross-chain tools (state, rebalance) — if satellites are registered
-   * - Any custom tools added via `addTool()`
+   * - All PAK tools + obi-kit vault + Bifrost + cross-chain + custom
    *
    * In **offline / stub mode** this includes:
-   * - Stub vault tools (deposit, withdraw) — if vaults are registered
-   * - Bifrost tools — if `bifrostConfig` is provided
-   * - Cross-chain tools — if satellites are registered
-   * - Any custom tools added via `addTool()`
+   * - Stub vault tools + Bifrost + cross-chain + custom
    */
   getTools(): Tool[] {
     const tools: Tool[] = [];
 
     if (this.agentApi) {
-      // On-chain mode: delegate to ObiAgentApi for PAK + vault + Bifrost + cross-chain tools
+      // On-chain mode: delegate to ObiAgentApi
       const allTools = this.agentApi.getAllTools();
       for (const t of allTools) {
         tools.push(t as unknown as Tool);
       }
+
+      // Also add EVM-specific tools if hub EVM context is available
+      tools.push(...this.buildEvmVaultTools());
     } else {
-      // Offline / stub mode: create stub vault tools
-      if (this.vaults.size > 0) {
+      // EVM mode or offline mode
+      tools.push(...this.buildEvmVaultTools());
+
+      // If no EVM tools were added, fall back to stub vault tools
+      if (tools.length === 0 && this.vaults.size > 0) {
         const opts = this.chainConfig
           ? { chainConfig: this.chainConfig }
-          : { chainConfig: { endpoint: 'not-connected' } as ChainConfig };
+          : { chainConfig: { endpoint: "not-connected" } as ChainConfig };
 
         tools.push(new VaultDepositTool(opts));
         tools.push(new VaultWithdrawTool(opts));
@@ -484,7 +538,7 @@ export class ObiKit {
       tools.push(...this.buildOfflineCrossChainTools());
     }
 
-    // Append any custom tools the user registered
+    // Append any custom tools
     tools.push(...this.customTools);
 
     return tools;
@@ -492,43 +546,49 @@ export class ObiKit {
 
   // ── Convenience methods ──────────────────────────────────────────────
 
-  /**
-   * Convenience method to invoke a single tool by name with the given input.
-   *
-   * @param toolName - The name of the tool to invoke.
-   * @param input - The input string (typically JSON) for the tool.
-   * @returns The parsed `ToolResult` from the tool execution.
-   */
   async invokeTool(toolName: string, input: string): Promise<ToolResult> {
     const tools = this.getTools();
     const tool = tools.find((t) => t.name === toolName);
     if (!tool) {
       return {
         success: false,
-        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(', ')}`,
+        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(", ")}`,
       };
     }
 
     const raw = await tool.invoke(input);
     try {
-      return JSON.parse(typeof raw === 'string' ? raw : String(raw)) as ToolResult;
+      return JSON.parse(
+        typeof raw === "string" ? raw : String(raw),
+      ) as ToolResult;
     } catch {
       return {
         success: true,
-        message: typeof raw === 'string' ? raw : String(raw),
+        message: typeof raw === "string" ? raw : String(raw),
       };
     }
   }
 
-  /**
-   * Returns a summary of the current SDK configuration for debugging.
-   */
   inspect(): Record<string, unknown> {
     return {
-      mode: this.polkadotContext ? 'on-chain' : 'offline',
+      mode: this.polkadotContext
+        ? "on-chain"
+        : this.hubEvmContext
+          ? "evm"
+          : "offline",
       chainConfig: this.chainConfig,
       hasPolkadotContext: this.polkadotContext !== undefined,
-      signerAddress: this.polkadotContext?.address,
+      signerAddress:
+        this.polkadotContext?.address ?? this.hubEvmContext?.account,
+      hasEvmVault:
+        this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined,
+      evmVaultAddress: this.evmVaultConfig?.vaultAddress,
+      hasSwapRouter: this.swapRouterConfig !== undefined,
+      swapRouterAddress: this.swapRouterConfig?.routerAddress,
+      swapQuoterAddress: this.swapRouterConfig?.quoterAddress,
+      poolAdapterCount: this.swapRouterConfig?.adapters
+        ? Object.keys(this.swapRouterConfig.adapters).length
+        : 0,
       vaultCount: this.vaults.size,
       vaultIds: Array.from(this.vaults.keys()),
       satelliteCount: this.satellites.size,
@@ -545,10 +605,6 @@ export class ObiKit {
 
   // ── Internal helpers ─────────────────────────────────────────────────
 
-  /**
-   * (Re)builds the internal `ObiAgentApi` using the current polkadot
-   * context, vault registry, satellite registry, and Bifrost config.
-   */
   private rebuildAgentApi(): void {
     if (!this.polkadotContext) {
       this.agentApi = undefined;
@@ -560,10 +616,11 @@ export class ObiKit {
     const crossChainConfig: CrossChainConfig | undefined =
       satelliteArray.length > 0
         ? {
-            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? '',
-            routerAddress: satelliteArray[0]?.routerAddress ?? '',
+            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? "",
+            routerAddress: satelliteArray[0]?.routerAddress ?? "",
             satellites: satelliteArray,
-            evmContexts: this.evmContexts.size > 0 ? this.evmContexts : undefined,
+            evmContexts:
+              this.evmContexts.size > 0 ? this.evmContexts : undefined,
           }
         : undefined;
 
@@ -578,8 +635,84 @@ export class ObiKit {
   }
 
   /**
-   * Builds Bifrost tools for offline / stub mode.
+   * Builds EVM vault tools when `hubEvmContext` + `evmVaultConfig` are available.
+   * Returns all vault-specific tools plus swap/intent tools when configured:
+   * - VaultDepositTool (ERC-4626 deposit)
+   * - VaultWithdrawTool (ERC-4626 withdraw/redeem)
+   * - WithdrawalQueueTool (queue request/fulfill/cancel/status)
+   * - BatchStrategyTool (batch executeStrategies)
+   * - PerformanceTool (read-only performance metrics)
+   * - OracleCheckTool (read-only oracle/circuit breaker status)
+   * - SwapQuoteTool (read-only swap quotes, requires swapRouterConfig)
+   * - SwapExecuteTool (single-hop swap, requires swapRouterConfig)
+   * - SwapMultiHopTool (multi-hop swap, requires swapRouterConfig)
+   * - ExecuteLocalSwapTool (vault-routed on-hub swap)
+   * - ExecuteIntentTool (universal cross-chain intent)
    */
+  private buildEvmVaultTools(): Tool[] {
+    if (!this.hubEvmContext || !this.evmVaultConfig) {
+      return [];
+    }
+
+    const tools: Tool[] = [
+      new VaultDepositTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new VaultWithdrawTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new WithdrawalQueueTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new BatchStrategyTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new PerformanceTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new OracleCheckTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new ExecuteLocalSwapTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new ExecuteIntentTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+    ];
+
+    // Add swap router tools when SwapRouter config is available
+    if (this.swapRouterConfig) {
+      tools.push(
+        new SwapQuoteTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          quoterAddress: this.swapRouterConfig.quoterAddress,
+        }),
+        new SwapExecuteTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          routerAddress: this.swapRouterConfig.routerAddress,
+        }),
+        new SwapMultiHopTool({
+          evmContext: this.hubEvmContext,
+          vaultConfig: this.evmVaultConfig,
+          routerAddress: this.swapRouterConfig.routerAddress,
+        }),
+      );
+    }
+
+    return tools;
+  }
+
   private buildOfflineBifrostTools(): Tool[] {
     if (!this.bifrostConfig) {
       return [];
@@ -600,9 +733,6 @@ export class ObiKit {
     ];
   }
 
-  /**
-   * Builds cross-chain tools for offline / stub mode.
-   */
   private buildOfflineCrossChainTools(): Tool[] {
     if (this.satellites.size === 0) {
       return [];

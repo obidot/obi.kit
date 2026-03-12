@@ -137,7 +137,7 @@ describe('VaultDepositTool', () => {
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
       expect(result.data.action).toBe('deposit');
-      expect(result.data.mode).toBe('on-chain');
+      expect(result.data.mode).toBe('polkadot');
       expect(result.data.signerAddress).toBe(mockPolkadotContext.address);
       expect(result.data.status).toBe('pending');
     });
@@ -155,7 +155,6 @@ describe('VaultDepositTool', () => {
       const raw = await tool.invoke(input);
       const result = JSON.parse(raw);
 
-      expect(result.data.message).toContain(mockPolkadotContext.address);
       expect(result.data.message).toContain('on-chain submission');
     });
   });
@@ -292,7 +291,7 @@ describe('VaultDepositTool', () => {
       const result = JSON.parse(raw);
 
       expect(result.success).toBe(true);
-      expect(result.data.mode).toBe('on-chain');
+      expect(result.data.mode).toBe('polkadot');
       expect(result.data.signerAddress).toBe(mockPolkadotContext.address);
     });
   });

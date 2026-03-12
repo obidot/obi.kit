@@ -12,12 +12,12 @@ Other developers can install `@obidot-kit/sdk` (or individual packages) to enabl
 
 ## Packages
 
-| Package | Description | npm |
-| --- | --- | --- |
-| [`@obidot-kit/core`](./packages/core) | Core types, interfaces, error classes, and chain abstractions | [![npm](https://img.shields.io/npm/v/@obidot-kit/core)](https://www.npmjs.com/package/@obidot-kit/core) |
-| [`@obidot-kit/llm`](./packages/llm) | LangChain tool implementations, agent factory, base tool class | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm) |
-| [`@obidot-kit/sdk`](./packages/sdk) | High-level SDK combining core + llm into a unified API | [![npm](https://img.shields.io/npm/v/@obidot-kit/sdk)](https://www.npmjs.com/package/@obidot-kit/sdk) |
-| [`@obidot-kit/cli`](./packages/cli) | CLI tool for scaffolding and running Obidot Kit agents | [![npm](https://img.shields.io/npm/v/@obidot-kit/cli)](https://www.npmjs.com/package/@obidot-kit/cli) |
+| Package                               | Description                                                                                              | npm                                                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [`@obidot-kit/core`](./packages/core) | Core types, interfaces, error classes, ABIs, chain abstractions (EVM + Polkadot)                         | [![npm](https://img.shields.io/npm/v/@obidot-kit/core)](https://www.npmjs.com/package/@obidot-kit/core) |
+| [`@obidot-kit/llm`](./packages/llm)   | 16 LangChain tools (vault, DEX aggregator, Bifrost, cross-chain, intent), agent factory, base tool class | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm)   |
+| [`@obidot-kit/sdk`](./packages/sdk)   | High-level SDK combining core + llm into a unified API                                                   | [![npm](https://img.shields.io/npm/v/@obidot-kit/sdk)](https://www.npmjs.com/package/@obidot-kit/sdk)   |
+| [`@obidot-kit/cli`](./packages/cli)   | CLI tool for scaffolding and running Obidot Kit agents                                                   | [![npm](https://img.shields.io/npm/v/@obidot-kit/cli)](https://www.npmjs.com/package/@obidot-kit/cli)   |
 
 ### Dependency Graph
 
@@ -41,31 +41,39 @@ pnpm add @obidot-kit/core @obidot-kit/llm
 ### Basic Usage
 
 ```ts
-import { ObiKit } from '@obidot-kit/sdk';
-import { VaultDepositTool, VaultWithdrawTool } from '@obidot-kit/llm';
+import { ObiKit } from "@obidot-kit/sdk";
+import {
+  VaultDepositTool,
+  VaultWithdrawTool,
+  BifrostYieldTool,
+  CrossChainStateTool,
+} from "@obidot-kit/llm";
 
 // 1. Initialize the SDK with your chain config
 const kit = new ObiKit({
   chainConfig: {
-    endpoint: 'wss://rpc.polkadot.io',
-    chainId: 'polkadot',
-    name: 'Polkadot',
+    endpoint: "wss://rpc.polkadot.io",
+    chainId: "polkadot",
+    name: "Polkadot",
   },
 });
 
 // 2. Register a vault
 kit.registerVault({
-  id: 'my-vault',
-  name: 'My DOT Vault',
-  address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+  id: "my-vault",
+  name: "My DOT Vault",
+  address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
   chain: kit.getChainConfig(),
-  asset: 'DOT',
+  asset: "DOT",
   decimals: 10,
 });
 
 // 3. Get LangChain-compatible tools for your agent
 const tools = kit.getTools();
-// → [VaultDepositTool, VaultWithdrawTool]
+// → [VaultDepositTool, VaultWithdrawTool, VaultStateTool, ExecuteStrategyTool,
+//    BifrostYieldTool, BifrostStrategyTool, CrossChainStateTool, CrossChainRebalanceTool,
+//    SwapQuoteTool, SwapExecuteTool, SwapMultiHopTool, ExecuteLocalSwapTool,
+//    ExecuteIntentTool, …]
 
 // 4. Bind tools to any LangChain-compatible LLM
 // const agent = kit.createAgent(yourChatModel);
@@ -74,16 +82,16 @@ const tools = kit.getTools();
 ### Using with LangChain
 
 ```ts
-import { ChatOpenAI } from '@langchain/openai';
-import { createAgent } from '@obidot-kit/llm';
+import { ChatOpenAI } from "@langchain/openai";
+import { createAgent } from "@obidot-kit/llm";
 
-const model = new ChatOpenAI({ model: 'gpt-4' });
+const model = new ChatOpenAI({ model: "gpt-4" });
 
 const agent = createAgent({
   model,
   chainConfig: {
-    endpoint: 'wss://rpc.polkadot.io',
-    chainId: 'polkadot',
+    endpoint: "wss://rpc.polkadot.io",
+    chainId: "polkadot",
   },
   additionalTools: kit.getTools(),
 });
@@ -95,14 +103,16 @@ const agent = createAgent({
 
 ## Examples
 
-| Example | Description |
-| --- | --- |
-| [`vault-agent`](./examples/vault-agent) | Connect an AI agent to a DeFi vault and perform deposit/withdraw operations |
+| Example                                             | Description                                                                       |
+| --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [`vault-agent`](./examples/vault-agent)             | Connect an AI agent to a DeFi vault and perform deposit/withdraw operations       |
+| [`cross-chain-agent`](./examples/cross-chain-agent) | Fetch Bifrost yields, aggregate cross-chain state, and execute Bifrost strategies |
 
 Run an example:
 
 ```sh
 pnpm --filter @obidot-kit/example-vault-agent start
+pnpm --filter @obidot-kit/example-cross-chain-agent start
 ```
 
 ## Development
@@ -128,29 +138,30 @@ pnpm build
 
 ### Commands
 
-| Command | Description |
-| --- | --- |
-| `pnpm build` | Build all packages (via Turborepo) |
-| `pnpm test` | Run all tests (via Vitest) |
-| `pnpm lint` | Lint all packages (via Biome) |
-| `pnpm lint:fix` | Lint and auto-fix all packages |
-| `pnpm format` | Format all files (via Biome) |
-| `pnpm typecheck` | Type-check all packages (via tsc) |
-| `pnpm clean` | Remove all build artifacts |
-| `pnpm changeset` | Create a new changeset for versioning |
-| `pnpm release` | Build and publish all changed packages |
+| Command          | Description                            |
+| ---------------- | -------------------------------------- |
+| `pnpm build`     | Build all packages (via Turborepo)     |
+| `pnpm test`      | Run all tests (via Vitest)             |
+| `pnpm lint`      | Lint all packages (via Biome)          |
+| `pnpm lint:fix`  | Lint and auto-fix all packages         |
+| `pnpm format`    | Format all files (via Biome)           |
+| `pnpm typecheck` | Type-check all packages (via tsc)      |
+| `pnpm clean`     | Remove all build artifacts             |
+| `pnpm changeset` | Create a new changeset for versioning  |
+| `pnpm release`   | Build and publish all changed packages |
 
 ### Project Structure
 
 ```
 obi-kit/
 ├── packages/
-│   ├── core/           # Core types, interfaces, error classes
+│   ├── core/           # Core types, interfaces, error classes, ABIs, EVM context
 │   ├── cli/            # CLI tool (@obidot-kit/cli)
-│   ├── llm/            # LangChain tools & agent factory
+│   ├── llm/            # 16 LangChain tools & agent factory
 │   └── sdk/            # High-level SDK facade
 ├── examples/
-│   └── vault-agent/    # Example: deposit/withdraw via agent
+│   ├── vault-agent/         # Example: deposit/withdraw via agent
+│   └── cross-chain-agent/   # Example: Bifrost yields + cross-chain state
 ├── .changeset/         # Changeset configuration
 ├── turbo.json          # Turborepo pipeline config
 ├── biome.json          # Biome linter/formatter config
@@ -174,28 +185,30 @@ obi-kit/
 You can extend the base tool class to create your own protocol-specific LangChain tool:
 
 ```ts
-import { ObiBaseTool } from '@obidot-kit/llm';
-import { z } from 'zod';
-import type { ChainConfig, ToolResult } from '@obidot-kit/core';
+import { ObiBaseTool } from "@obidot-kit/llm";
+import { z } from "zod";
+import type { ChainConfig, ToolResult } from "@obidot-kit/core";
 
 export class MyProtocolStakeTool extends ObiBaseTool<typeof inputSchema> {
-  name = 'my_protocol_stake';
-  description = 'Stake tokens in MyProtocol on a Polkadot parachain.';
+  name = "my_protocol_stake";
+  description = "Stake tokens in MyProtocol on a Polkadot parachain.";
   schema = inputSchema;
 
-  protected async execute(input: z.infer<typeof inputSchema>): Promise<ToolResult> {
+  protected async execute(
+    input: z.infer<typeof inputSchema>,
+  ): Promise<ToolResult> {
     // Your on-chain logic here
     return {
       success: true,
       message: `Staked ${input.amount} tokens successfully`,
-      data: { txHash: '0x...' },
+      data: { txHash: "0x..." },
     };
   }
 }
 
 const inputSchema = z.object({
-  amount: z.string().describe('Amount to stake'),
-  validator: z.string().describe('Validator address'),
+  amount: z.string().describe("Amount to stake"),
+  validator: z.string().describe("Validator address"),
 });
 ```
 
@@ -215,6 +228,30 @@ pnpm release
 ```
 
 All packages are published with public access under the `@obidot-kit` npm scope.
+
+## Roadmap
+
+**v0.1.0 — Complete**
+
+- 10 LangChain tools: vault deposit/withdraw/state/strategy, Bifrost yield/strategy, cross-chain state/rebalance, yield aggregation, vault performance
+- `@obidot-kit/core` types, ABIs (BifrostAdapter, CrossChainRouter, satellite vault), EVM + Polkadot context
+- `cross-chain-agent` example
+- 225 tests passing
+
+**v0.2.0 — Complete**
+
+- DEX aggregator support: 3 new ABIs (SwapRouter, SwapQuoter, PoolAdapter), 3 new LangChain tools (SwapQuoteTool, SwapExecuteTool, SwapMultiHopTool)
+- Universal intent system: 2 new tools (ExecuteLocalSwapTool, ExecuteIntentTool), DestType/IntentAsset/Destination/UniversalIntent types
+- Updated ObidotVault ABI: `executeIntent`, `executeLocalSwap`, `setSwapRouter`, `swapRouter`, `intentNonces`, `SOLVER_ROLE`
+- ObiKit SDK facade: 7 new swap/intent public methods, `registerSwapRouter()`, `buildEvmVaultTools()` now returns 11 tools
+- `PoolType` enum (HydrationOmnipool, AssetHubPair, BifrostDEX, Custom), `SwapRouterConfig`, `ObiSwapRouterContext`
+- 16 total LangChain tools, 225 tests passing
+
+**v0.3.0 — Planned**
+
+- Real on-chain contract connections (viem clients for Polkadot Hub TestNet)
+- Live vault agent with EIP-712 signing against deployed contracts
+- Full `@obidot-kit/cli` scaffold command
 
 ## Contributing
 
