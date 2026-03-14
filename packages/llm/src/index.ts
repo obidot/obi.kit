@@ -1,12 +1,14 @@
 export type { AgentConfig, AgentInstance } from './agent.js';
 export { createAgent, createAgentWithTools } from './agent.js';
-
 export type {
   BifrostConfig,
   CrossChainConfig,
   ObiAgentApiConfig,
 } from './obi-agent-api.js';
 export { ObiAgentApi } from './obi-agent-api.js';
+export type { BifrostYieldProviderOptions } from './providers/bifrost-yield-provider.js';
+export { createBifrostYieldProvider } from './providers/bifrost-yield-provider.js';
+export { EvmBifrostStrategyService } from './services/evm-bifrost-strategy-service.js';
 
 export type { ObiBaseToolOptions } from './tools/base-tool.js';
 export { ObiBaseTool } from './tools/base-tool.js';

@@ -31,6 +31,10 @@ import {
   type VaultConfig,
 } from '@obidot-kit/core';
 import {
+  BifrostStrategyTool,
+  BifrostYieldTool,
+  createBifrostYieldProvider,
+  EvmBifrostStrategyService,
   OracleCheckTool,
   PerformanceTool,
   VaultDepositTool,
@@ -80,6 +84,9 @@ const swapRouterConfig: SwapRouterConfig = {
   },
 };
 
+const BIFROST_ADAPTER_ADDRESS =
+  process.env['BIFROST_ADAPTER_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.bifrostAdapterAddress;
+
 // ---------------------------------------------------------------------------
 // Agent Setup
 // ---------------------------------------------------------------------------
@@ -111,6 +118,8 @@ async function main(): Promise<void> {
   // 3. Create tools
   console.log('[3] Creating vault tools...');
 
+  let bifrostStrategyTool: BifrostStrategyTool;
+
   if (isEvmMode) {
     // Import viem accounts dynamically to avoid requiring it when offline
     const { privateKeyToAccount } = await import('viem/accounts');
@@ -127,6 +136,18 @@ async function main(): Promise<void> {
     kit.setEvmVault(evmContext, evmVaultConfig);
     console.log(`   Signer : ${account.address}`);
     console.log(`   EVM vault tools created (${kit.getTools().length} total)`);
+
+    // Wire BifrostStrategyService with the real EVM context
+    const bifrostService = new EvmBifrostStrategyService(evmContext, BIFROST_ADAPTER_ADDRESS as `0x${string}`);
+    bifrostStrategyTool = new BifrostStrategyTool({
+      strategyService: bifrostService,
+      adapterAddress: BIFROST_ADAPTER_ADDRESS,
+    });
+  } else {
+    // Offline mode: stub Bifrost strategy tool
+    bifrostStrategyTool = new BifrostStrategyTool({
+      adapterAddress: BIFROST_ADAPTER_ADDRESS,
+    });
   }
 
   // Create individual tools for demonstration
@@ -146,7 +167,20 @@ async function main(): Promise<void> {
     isEvmMode ? { evmContext: kit.getHubEvmContext()!, vaultConfig: evmVaultConfig } : {},
   );
 
-  const tools = [depositTool, withdrawTool, queueTool, performanceTool, oracleTool];
+  // Bifrost yield tool — uses live RPC provider (falls back to static rates)
+  const bifrostYieldTool = new BifrostYieldTool({
+    provider: createBifrostYieldProvider({ useLiveRates: isEvmMode }),
+  });
+
+  const tools = [
+    depositTool,
+    withdrawTool,
+    queueTool,
+    performanceTool,
+    oracleTool,
+    bifrostStrategyTool,
+    bifrostYieldTool,
+  ];
   console.log(`   ${tools.length} tool(s) available:`);
   for (const tool of tools) {
     console.log(`     - ${tool.name}`);
@@ -200,8 +234,36 @@ async function main(): Promise<void> {
   console.log(`   Message : ${perf.data?.message ?? perf.error}`);
   console.log();
 
-  // 8. SDK inspection
-  console.log('[8] SDK state:');
+  // 8. Fetch Bifrost yields
+  console.log('[8] Fetching Bifrost yield products...');
+  const yieldsResult = await bifrostYieldTool.invoke('{"category":"SLP"}');
+  const yields = JSON.parse(yieldsResult);
+  console.log(`   Success : ${yields.success}`);
+  console.log(`   Message : ${yields.message ?? yields.error}`);
+  if (yields.data?.products) {
+    for (const p of yields.data.products as Array<{ product: string; apy: number }>) {
+      console.log(`     ${p.product}: ${p.apy.toFixed(2)}% APY`);
+    }
+  }
+  console.log();
+
+  // 9. Preview a Bifrost MintVToken strategy (stub or live)
+  console.log('[9] Previewing Bifrost MintVToken strategy (1 DOT)...');
+  const bifrostInput = JSON.stringify({
+    strategyType: 0, // MintVToken
+    currencyIn: 0, // DOT
+    amount: '10000000000', // 1 DOT (10 decimals on Bifrost)
+  });
+  const bifrostResult = await bifrostStrategyTool.invoke(bifrostInput);
+  const bifrost = JSON.parse(bifrostResult);
+  console.log(`   Success : ${bifrost.success}`);
+  console.log(`   Mode    : ${bifrost.data?.mode ?? 'unknown'}`);
+  console.log(`   Status  : ${bifrost.data?.status ?? 'unknown'}`);
+  console.log(`   Message : ${bifrost.data?.message ?? bifrost.error}`);
+  console.log();
+
+  // 10. SDK inspection
+  console.log('[10] SDK state:');
   const info = kit.inspect();
   console.log(`   Mode            : ${info['mode']}`);
   console.log(`   Has EVM vault   : ${info['hasEvmVault']}`);
@@ -219,6 +281,8 @@ async function main(): Promise<void> {
   console.log('   - Withdrawal queue management');
   console.log('   - Oracle freshness and circuit breaker checks');
   console.log('   - Vault performance metrics');
+  console.log('   - Bifrost yield product discovery (SLP APY via live RPC or static rates)');
+  console.log('   - Bifrost strategy execution via BifrostAdapter (MintVToken, DEXSwap, Farming, SALP)');
   console.log();
   console.log(' To enable EVM mode, set PRIVATE_KEY and real contract addresses.');
   console.log(' To add an LLM, use kit.createAgent(model) with ChatOpenAI.');

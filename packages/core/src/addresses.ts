@@ -44,6 +44,8 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
   // ── DEX Adapters ──────────────────────────────────────────────────────────
   /** HydrationOmnipoolAdapter — Hydration Omnipool XCM adapter (parachain 2034) */
   hydrationAdapterAddress: '0xF0E1c10f97446C032A86C9643258Bb26d6129933',
+  /** BifrostAdapter — Bifrost SLP/SALP/DEX/Farming adapter (parachain 2030) */
+  bifrostAdapterAddress: '0x265Cb785De0fF2e5BcebDEb53095aDCAE9175527',
 
   // ── Oracle ────────────────────────────────────────────────────────────────
   /** OracleRegistry — multi-asset price oracle registry with staleness checks */
