@@ -1,14 +1,13 @@
-import type { ObiEvmContext } from "@obidot-kit/core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EvmCrossChainService } from "../src/services/evm-cross-chain-service.js";
-import { CrossChainRebalanceTool } from "../src/tools/cross-chain-rebalance.js";
+import type { ObiEvmContext } from '@obidot-kit/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EvmCrossChainService } from '../src/services/evm-cross-chain-service.js';
+import { CrossChainRebalanceTool } from '../src/tools/cross-chain-rebalance.js';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
-const ROUTER_ADDRESS = "0xE2fFfb3B5C72f99811bC20D857035611bFCe5b5d" as const;
-const ADMIN_ADDRESS = "0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301" as const;
-const TX_HASH =
-  "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef" as const;
+const ROUTER_ADDRESS = '0xE2fFfb3B5C72f99811bC20D857035611bFCe5b5d' as const;
+const ADMIN_ADDRESS = '0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301' as const;
+const TX_HASH = '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as const;
 
 const MOCK_ROUTER_STATE = {
   paused: false,
@@ -20,44 +19,40 @@ const MOCK_ROUTER_STATE = {
 };
 
 function makeReadContractMock() {
-  return vi
-    .fn()
-    .mockImplementation(({ functionName }: { functionName: string }) => {
-      switch (functionName) {
-        case "paused":
-          return Promise.resolve(MOCK_ROUTER_STATE.paused);
-        case "outgoingNonce":
-          return Promise.resolve(MOCK_ROUTER_STATE.outgoingNonce);
-        case "pendingSatelliteDeposits":
-          return Promise.resolve(MOCK_ROUTER_STATE.pendingSatelliteDeposits);
-        case "pendingWithdrawalRequests":
-          return Promise.resolve(MOCK_ROUTER_STATE.pendingWithdrawalRequests);
-        case "satelliteChainCount":
-          return Promise.resolve(MOCK_ROUTER_STATE.satelliteChainCount);
-        case "relayerFee":
-          return Promise.resolve(MOCK_ROUTER_STATE.relayerFee);
-        default:
-          return Promise.reject(new Error(`Unknown function: ${functionName}`));
-      }
-    });
+  return vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
+    switch (functionName) {
+      case 'paused':
+        return Promise.resolve(MOCK_ROUTER_STATE.paused);
+      case 'outgoingNonce':
+        return Promise.resolve(MOCK_ROUTER_STATE.outgoingNonce);
+      case 'pendingSatelliteDeposits':
+        return Promise.resolve(MOCK_ROUTER_STATE.pendingSatelliteDeposits);
+      case 'pendingWithdrawalRequests':
+        return Promise.resolve(MOCK_ROUTER_STATE.pendingWithdrawalRequests);
+      case 'satelliteChainCount':
+        return Promise.resolve(MOCK_ROUTER_STATE.satelliteChainCount);
+      case 'relayerFee':
+        return Promise.resolve(MOCK_ROUTER_STATE.relayerFee);
+      default:
+        return Promise.reject(new Error(`Unknown function: ${functionName}`));
+    }
+  });
 }
 
 function makeEvmContext(overrides: Partial<ObiEvmContext> = {}): ObiEvmContext {
   return {
     client: {
       readContract: makeReadContractMock(),
-      waitForTransactionReceipt: vi
-        .fn()
-        .mockResolvedValue({ status: "success", blockNumber: 100n }),
-    } as unknown as ObiEvmContext["client"],
+      waitForTransactionReceipt: vi.fn().mockResolvedValue({ status: 'success', blockNumber: 100n }),
+    } as unknown as ObiEvmContext['client'],
     walletClient: {
       writeContract: vi.fn().mockResolvedValue(TX_HASH),
-    } as unknown as NonNullable<ObiEvmContext["walletClient"]>,
+    } as unknown as NonNullable<ObiEvmContext['walletClient']>,
     chain: {
       id: 420420417,
-      name: "Polkadot Hub TestNet",
-    } as ObiEvmContext["chain"],
-    chainName: "Polkadot Hub TestNet",
+      name: 'Polkadot Hub TestNet',
+    } as ObiEvmContext['chain'],
+    chainName: 'Polkadot Hub TestNet',
     account: ADMIN_ADDRESS,
     ...overrides,
   };
@@ -65,9 +60,9 @@ function makeEvmContext(overrides: Partial<ObiEvmContext> = {}): ObiEvmContext {
 
 // ── EvmCrossChainService tests ───────────────────────────────────────────────
 
-describe("EvmCrossChainService", () => {
-  describe("construction", () => {
-    it("should create the service with an EVM context and router address", () => {
+describe('EvmCrossChainService', () => {
+  describe('construction', () => {
+    it('should create the service with an EVM context and router address', () => {
       const ctx = makeEvmContext();
       const service = new EvmCrossChainService({
         evmContext: ctx,
@@ -77,8 +72,8 @@ describe("EvmCrossChainService", () => {
     });
   });
 
-  describe("readRouterState", () => {
-    it("should read all router state fields in parallel", async () => {
+  describe('readRouterState', () => {
+    it('should read all router state fields in parallel', async () => {
       const ctx = makeEvmContext();
       const service = new EvmCrossChainService({
         evmContext: ctx,
@@ -95,7 +90,7 @@ describe("EvmCrossChainService", () => {
       expect(state.relayerFee).toBe(1_000_000_000_000_000_000n);
     });
 
-    it("should call readContract with the correct router address", async () => {
+    it('should call readContract with the correct router address', async () => {
       const ctx = makeEvmContext();
       const service = new EvmCrossChainService({
         evmContext: ctx,
@@ -104,8 +99,7 @@ describe("EvmCrossChainService", () => {
 
       await service.readRouterState();
 
-      const calls = (ctx.client.readContract as ReturnType<typeof vi.fn>).mock
-        .calls;
+      const calls = (ctx.client.readContract as ReturnType<typeof vi.fn>).mock.calls;
       // All 6 reads should use the router address
       expect(calls.length).toBe(6);
       for (const call of calls) {
@@ -113,34 +107,30 @@ describe("EvmCrossChainService", () => {
       }
     });
 
-    it("should propagate readContract errors", async () => {
+    it('should propagate readContract errors', async () => {
       const ctx = makeEvmContext({
         client: {
-          readContract: vi.fn().mockRejectedValue(new Error("RPC error")),
+          readContract: vi.fn().mockRejectedValue(new Error('RPC error')),
           waitForTransactionReceipt: vi.fn(),
-        } as unknown as ObiEvmContext["client"],
+        } as unknown as ObiEvmContext['client'],
       });
       const service = new EvmCrossChainService({
         evmContext: ctx,
         routerAddress: ROUTER_ADDRESS,
       });
 
-      await expect(service.readRouterState()).rejects.toThrow("RPC error");
+      await expect(service.readRouterState()).rejects.toThrow('RPC error');
     });
 
-    it("should reflect paused=true when router is paused", async () => {
+    it('should reflect paused=true when router is paused', async () => {
       const ctx = makeEvmContext({
         client: {
-          readContract: vi
-            .fn()
-            .mockImplementation(
-              ({ functionName }: { functionName: string }) => {
-                if (functionName === "paused") return Promise.resolve(true);
-                return Promise.resolve(0n);
-              },
-            ),
+          readContract: vi.fn().mockImplementation(({ functionName }: { functionName: string }) => {
+            if (functionName === 'paused') return Promise.resolve(true);
+            return Promise.resolve(0n);
+          }),
           waitForTransactionReceipt: vi.fn(),
-        } as unknown as ObiEvmContext["client"],
+        } as unknown as ObiEvmContext['client'],
       });
       const service = new EvmCrossChainService({
         evmContext: ctx,
@@ -151,8 +141,8 @@ describe("EvmCrossChainService", () => {
     });
   });
 
-  describe("broadcastSync", () => {
-    it("should call writeContract with correct args and wait for receipt", async () => {
+  describe('broadcastSync', () => {
+    it('should call writeContract with correct args and wait for receipt', async () => {
       const ctx = makeEvmContext();
       const service = new EvmCrossChainService({
         evmContext: ctx,
@@ -169,7 +159,7 @@ describe("EvmCrossChainService", () => {
       expect(ctx.walletClient!.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: ROUTER_ADDRESS,
-          functionName: "broadcastAssetSync",
+          functionName: 'broadcastAssetSync',
           args: [5000n, 4800n, 200n],
         }),
       );
@@ -179,7 +169,7 @@ describe("EvmCrossChainService", () => {
       });
     });
 
-    it("should throw if walletClient is not available", async () => {
+    it('should throw if walletClient is not available', async () => {
       const ctx = makeEvmContext({
         walletClient: undefined,
         account: undefined,
@@ -190,33 +180,29 @@ describe("EvmCrossChainService", () => {
       });
 
       await expect(service.broadcastSync(1000n, 1000n, 0n)).rejects.toThrow(
-        "walletClient and account are required for broadcastSync",
+        'walletClient and account are required for broadcastSync',
       );
     });
 
-    it("should propagate writeContract errors", async () => {
+    it('should propagate writeContract errors', async () => {
       const ctx = makeEvmContext({
         walletClient: {
-          writeContract: vi
-            .fn()
-            .mockRejectedValue(new Error("AccessControl: missing role")),
-        } as unknown as NonNullable<ObiEvmContext["walletClient"]>,
+          writeContract: vi.fn().mockRejectedValue(new Error('AccessControl: missing role')),
+        } as unknown as NonNullable<ObiEvmContext['walletClient']>,
       });
       const service = new EvmCrossChainService({
         evmContext: ctx,
         routerAddress: ROUTER_ADDRESS,
       });
 
-      await expect(service.broadcastSync(1000n, 1000n, 0n)).rejects.toThrow(
-        "AccessControl: missing role",
-      );
+      await expect(service.broadcastSync(1000n, 1000n, 0n)).rejects.toThrow('AccessControl: missing role');
     });
   });
 });
 
 // ── CrossChainRebalanceTool + EvmCrossChainService integration tests ─────────
 
-describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
+describe('CrossChainRebalanceTool with EvmCrossChainService', () => {
   let evmContext: ObiEvmContext;
   let evmService: EvmCrossChainService;
 
@@ -228,33 +214,33 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
     });
   });
 
-  it("hasEvmCrossChainService() returns true when service is provided", () => {
+  it('hasEvmCrossChainService() returns true when service is provided', () => {
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
       evmCrossChainService: evmService,
     });
     expect(tool.hasEvmCrossChainService()).toBe(true);
   });
 
-  it("hasEvmCrossChainService() returns false when service is absent", () => {
+  it('hasEvmCrossChainService() returns false when service is absent', () => {
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
     });
     expect(tool.hasEvmCrossChainService()).toBe(false);
   });
 
-  it("hub_to_satellite includes live routerState from service", async () => {
+  it('hub_to_satellite includes live routerState from service', async () => {
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
       evmCrossChainService: evmService,
       satellites: [
         {
-          id: "sepolia",
-          address: "0xabc",
-          chain: { name: "Sepolia", endpoint: "https://rpc.sepolia.org" },
+          id: 'sepolia',
+          address: '0xabc',
+          chain: { name: 'Sepolia', endpoint: 'https://rpc.sepolia.org' },
           evmChainId: 11155111,
         },
       ],
@@ -262,31 +248,31 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
 
     const raw = await tool.invoke(
       JSON.stringify({
-        direction: "hub_to_satellite",
-        satelliteChainName: "Sepolia",
-        amount: "1000000000000000000",
+        direction: 'hub_to_satellite',
+        satelliteChainName: 'Sepolia',
+        amount: '1000000000000000000',
       }),
     );
     const result = JSON.parse(raw);
 
     expect(result.success).toBe(true);
-    expect(result.data.mode).toBe("evm-live");
+    expect(result.data.mode).toBe('evm-live');
     expect(result.data.routerState).not.toBeNull();
-    expect(result.data.routerState.outgoingNonce).toBe("7");
-    expect(result.data.routerState.pendingSatelliteDeposits).toBe("2");
-    expect(result.data.note).toContain("vault.executeIntent");
+    expect(result.data.routerState.outgoingNonce).toBe('7');
+    expect(result.data.routerState.pendingSatelliteDeposits).toBe('2');
+    expect(result.data.note).toContain('vault.executeIntent');
   });
 
-  it("satellite_to_hub includes live routerState from service", async () => {
+  it('satellite_to_hub includes live routerState from service', async () => {
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
       evmCrossChainService: evmService,
       satellites: [
         {
-          id: "sepolia",
-          address: "0xabc",
-          chain: { name: "Sepolia", endpoint: "https://rpc.sepolia.org" },
+          id: 'sepolia',
+          address: '0xabc',
+          chain: { name: 'Sepolia', endpoint: 'https://rpc.sepolia.org' },
           evmChainId: 11155111,
         },
       ],
@@ -294,26 +280,26 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
 
     const raw = await tool.invoke(
       JSON.stringify({
-        direction: "satellite_to_hub",
-        satelliteChainName: "Sepolia",
-        amount: "500000000000000000",
-        receiver: "0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301",
+        direction: 'satellite_to_hub',
+        satelliteChainName: 'Sepolia',
+        amount: '500000000000000000',
+        receiver: '0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301',
       }),
     );
     const result = JSON.parse(raw);
 
     expect(result.success).toBe(true);
-    expect(result.data.mode).toBe("evm-live");
-    expect(result.data.routerState.pendingWithdrawalRequests).toBe("1");
-    expect(result.data.note).toContain("onAccept");
+    expect(result.data.mode).toBe('evm-live');
+    expect(result.data.routerState.pendingWithdrawalRequests).toBe('1');
+    expect(result.data.note).toContain('onAccept');
   });
 
-  it("falls back gracefully when readRouterState fails", async () => {
+  it('falls back gracefully when readRouterState fails', async () => {
     const failingCtx = makeEvmContext({
       client: {
-        readContract: vi.fn().mockRejectedValue(new Error("RPC timeout")),
+        readContract: vi.fn().mockRejectedValue(new Error('RPC timeout')),
         waitForTransactionReceipt: vi.fn(),
-      } as unknown as ObiEvmContext["client"],
+      } as unknown as ObiEvmContext['client'],
     });
     const failingService = new EvmCrossChainService({
       evmContext: failingCtx,
@@ -321,14 +307,14 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
     });
 
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
       evmCrossChainService: failingService,
       satellites: [
         {
-          id: "sepolia",
-          address: "0xabc",
-          chain: { name: "Sepolia", endpoint: "https://rpc.sepolia.org" },
+          id: 'sepolia',
+          address: '0xabc',
+          chain: { name: 'Sepolia', endpoint: 'https://rpc.sepolia.org' },
           evmChainId: 11155111,
         },
       ],
@@ -336,9 +322,9 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
 
     const raw = await tool.invoke(
       JSON.stringify({
-        direction: "hub_to_satellite",
-        satelliteChainName: "Sepolia",
-        amount: "1000",
+        direction: 'hub_to_satellite',
+        satelliteChainName: 'Sepolia',
+        amount: '1000',
       }),
     );
     const result = JSON.parse(raw);
@@ -348,15 +334,15 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
     expect(result.data.routerState).toBeNull();
   });
 
-  it("offline mode returns routerState: null", async () => {
+  it('offline mode returns routerState: null', async () => {
     const tool = new CrossChainRebalanceTool({
-      hubVaultAddress: "0x03473a95971Ba0496786a615e21b1e87bDFf0025",
+      hubVaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
       routerAddress: ROUTER_ADDRESS,
       satellites: [
         {
-          id: "sepolia",
-          address: "0xabc",
-          chain: { name: "Sepolia", endpoint: "https://rpc.sepolia.org" },
+          id: 'sepolia',
+          address: '0xabc',
+          chain: { name: 'Sepolia', endpoint: 'https://rpc.sepolia.org' },
           evmChainId: 11155111,
         },
       ],
@@ -364,15 +350,15 @@ describe("CrossChainRebalanceTool with EvmCrossChainService", () => {
 
     const raw = await tool.invoke(
       JSON.stringify({
-        direction: "hub_to_satellite",
-        satelliteChainName: "Sepolia",
-        amount: "1000",
+        direction: 'hub_to_satellite',
+        satelliteChainName: 'Sepolia',
+        amount: '1000',
       }),
     );
     const result = JSON.parse(raw);
 
     expect(result.success).toBe(true);
-    expect(result.data.mode).toBe("offline");
+    expect(result.data.mode).toBe('offline');
     expect(result.data.routerState).toBeNull();
   });
 });

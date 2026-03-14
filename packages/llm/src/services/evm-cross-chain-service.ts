@@ -1,5 +1,5 @@
-import type { ObiEvmContext } from "@obidot-kit/core";
-import { CROSS_CHAIN_ROUTER_ABI } from "@obidot-kit/core";
+import type { ObiEvmContext } from '@obidot-kit/core';
+import { CROSS_CHAIN_ROUTER_ABI } from '@obidot-kit/core';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Types
@@ -123,32 +123,32 @@ export class EvmCrossChainService {
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "paused",
+        functionName: 'paused',
       }) as Promise<boolean>,
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "outgoingNonce",
+        functionName: 'outgoingNonce',
       }) as Promise<bigint>,
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "pendingSatelliteDeposits",
+        functionName: 'pendingSatelliteDeposits',
       }) as Promise<bigint>,
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "pendingWithdrawalRequests",
+        functionName: 'pendingWithdrawalRequests',
       }) as Promise<bigint>,
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "satelliteChainCount",
+        functionName: 'satelliteChainCount',
       }) as Promise<bigint>,
       this.evmContext.client.readContract({
         address: this.routerAddress,
         abi: CROSS_CHAIN_ROUTER_ABI,
-        functionName: "relayerFee",
+        functionName: 'relayerFee',
       }) as Promise<bigint>,
     ]);
 
@@ -182,15 +182,13 @@ export class EvmCrossChainService {
     totalRemoteAssets: bigint,
   ): Promise<BroadcastSyncResult> {
     if (!this.evmContext.walletClient || !this.evmContext.account) {
-      throw new Error(
-        "EvmCrossChainService: walletClient and account are required for broadcastSync",
-      );
+      throw new Error('EvmCrossChainService: walletClient and account are required for broadcastSync');
     }
 
     const txHash = await this.evmContext.walletClient.writeContract({
       address: this.routerAddress,
       abi: CROSS_CHAIN_ROUTER_ABI,
-      functionName: "broadcastAssetSync",
+      functionName: 'broadcastAssetSync',
       args: [globalTotalAssets, globalTotalShares, totalRemoteAssets],
       chain: this.evmContext.chain,
       account: this.evmContext.account as `0x${string}`,

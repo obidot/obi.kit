@@ -1,18 +1,13 @@
-import { Tool } from "@langchain/core/tools";
-import type {
-  ChainConfig,
-  ObiPolkadotContext,
-  SatelliteVaultConfig,
-  ToolResult,
-} from "@obidot-kit/core";
-import type { EvmCrossChainService } from "../services/evm-cross-chain-service.js";
+import { Tool } from '@langchain/core/tools';
+import type { ChainConfig, ObiPolkadotContext, SatelliteVaultConfig, ToolResult } from '@obidot-kit/core';
+import type { EvmCrossChainService } from '../services/evm-cross-chain-service.js';
 
 /**
  * Parsed input for the cross-chain rebalance tool.
  */
 export interface CrossChainRebalanceInput {
   /** Direction of asset movement: "hub_to_satellite" or "satellite_to_hub" */
-  direction: "hub_to_satellite" | "satellite_to_hub";
+  direction: 'hub_to_satellite' | 'satellite_to_hub';
   /** The satellite chain name to rebalance with */
   satelliteChainName: string;
   /** Amount to move (as a string to preserve precision) */
@@ -107,10 +102,10 @@ export interface CrossChainRebalanceToolOptions {
  * ```
  */
 export class CrossChainRebalanceTool extends Tool {
-  name = "execute_cross_chain_rebalance";
+  name = 'execute_cross_chain_rebalance';
 
   description =
-    "Trigger cross-chain rebalancing of assets between the hub vault and a satellite vault via Hyperbridge ISMP. " +
+    'Trigger cross-chain rebalancing of assets between the hub vault and a satellite vault via Hyperbridge ISMP. ' +
     'Input should be a JSON string with "direction" ("hub_to_satellite" or "satellite_to_hub"), ' +
     '"satelliteChainName" (the target satellite chain), "amount" (as a string), and optionally "receiver" (address).';
 
@@ -141,7 +136,7 @@ export class CrossChainRebalanceTool extends Tool {
     if (this.chainConfig) {
       return this.chainConfig;
     }
-    return { endpoint: "context-managed" };
+    return { endpoint: 'context-managed' };
   }
 
   /**
@@ -197,36 +192,27 @@ export class CrossChainRebalanceTool extends Tool {
       throw new Error(`Invalid JSON input: ${input}`);
     }
 
-    if (typeof parsed !== "object" || parsed === null) {
-      throw new Error("Input must be a JSON object");
+    if (typeof parsed !== 'object' || parsed === null) {
+      throw new Error('Input must be a JSON object');
     }
 
     const obj = parsed as Record<string, unknown>;
 
-    if (
-      obj["direction"] !== "hub_to_satellite" &&
-      obj["direction"] !== "satellite_to_hub"
-    ) {
-      throw new Error(
-        'Missing or invalid "direction" field. Must be "hub_to_satellite" or "satellite_to_hub".',
-      );
+    if (obj['direction'] !== 'hub_to_satellite' && obj['direction'] !== 'satellite_to_hub') {
+      throw new Error('Missing or invalid "direction" field. Must be "hub_to_satellite" or "satellite_to_hub".');
     }
-    if (
-      typeof obj["satelliteChainName"] !== "string" ||
-      obj["satelliteChainName"].length === 0
-    ) {
+    if (typeof obj['satelliteChainName'] !== 'string' || obj['satelliteChainName'].length === 0) {
       throw new Error('Missing or invalid "satelliteChainName" field');
     }
-    if (typeof obj["amount"] !== "string" || obj["amount"].length === 0) {
+    if (typeof obj['amount'] !== 'string' || obj['amount'].length === 0) {
       throw new Error('Missing or invalid "amount" field');
     }
 
     return {
-      direction: obj["direction"],
-      satelliteChainName: obj["satelliteChainName"],
-      amount: obj["amount"],
-      receiver:
-        typeof obj["receiver"] === "string" ? obj["receiver"] : undefined,
+      direction: obj['direction'],
+      satelliteChainName: obj['satelliteChainName'],
+      amount: obj['amount'],
+      receiver: typeof obj['receiver'] === 'string' ? obj['receiver'] : undefined,
     };
   }
 
@@ -238,20 +224,16 @@ export class CrossChainRebalanceTool extends Tool {
     // Validate amount is a positive number
     const amountBigInt = BigInt(input.amount);
     if (amountBigInt <= 0n) {
-      throw new Error("Amount must be a positive value");
+      throw new Error('Amount must be a positive value');
     }
 
     // Validate satellite exists in configuration
     if (this.satellites.length > 0) {
       const satellite = this.satellites.find(
-        (s) =>
-          s.chain.name?.toLowerCase() ===
-          input.satelliteChainName.toLowerCase(),
+        (s) => s.chain.name?.toLowerCase() === input.satelliteChainName.toLowerCase(),
       );
       if (!satellite) {
-        const available = this.satellites
-          .map((s) => s.chain.name ?? s.id)
-          .join(", ");
+        const available = this.satellites.map((s) => s.chain.name ?? s.id).join(', ');
         throw new Error(
           `Satellite chain "${input.satelliteChainName}" not found in configuration. Available: ${available}`,
         );
@@ -259,10 +241,8 @@ export class CrossChainRebalanceTool extends Tool {
     }
 
     // Validate receiver is present for satellite_to_hub withdrawals
-    if (input.direction === "satellite_to_hub" && !input.receiver) {
-      throw new Error(
-        'A "receiver" address is required for satellite_to_hub withdrawals',
-      );
+    if (input.direction === 'satellite_to_hub' && !input.receiver) {
+      throw new Error('A "receiver" address is required for satellite_to_hub withdrawals');
     }
   }
 
@@ -270,9 +250,7 @@ export class CrossChainRebalanceTool extends Tool {
    * Finds a satellite config by chain name (case-insensitive).
    */
   private findSatellite(chainName: string): SatelliteVaultConfig | undefined {
-    return this.satellites.find(
-      (s) => s.chain.name?.toLowerCase() === chainName.toLowerCase(),
-    );
+    return this.satellites.find((s) => s.chain.name?.toLowerCase() === chainName.toLowerCase());
   }
 
   /**
@@ -282,13 +260,11 @@ export class CrossChainRebalanceTool extends Tool {
    * interact with the CrossChainRouter contract. Otherwise it falls
    * back to a stub result.
    */
-  private async executeRebalance(
-    input: CrossChainRebalanceInput,
-  ): Promise<ToolResult> {
+  private async executeRebalance(input: CrossChainRebalanceInput): Promise<ToolResult> {
     const config = this.getChainConfig();
     const satellite = this.findSatellite(input.satelliteChainName);
 
-    if (input.direction === "hub_to_satellite") {
+    if (input.direction === 'hub_to_satellite') {
       return this.executeHubToSatellite(input, config, satellite);
     }
 
@@ -329,25 +305,21 @@ export class CrossChainRebalanceTool extends Tool {
     return {
       success: true,
       data: {
-        action: "cross_chain_deposit",
+        action: 'cross_chain_deposit',
         direction: input.direction,
         satelliteChainName: input.satelliteChainName,
         amount: input.amount,
-        hubVaultAddress: this.hubVaultAddress ?? "not-configured",
-        routerAddress: this.routerAddress ?? "not-configured",
-        satelliteVaultAddress: satellite?.address ?? "not-configured",
+        hubVaultAddress: this.hubVaultAddress ?? 'not-configured',
+        routerAddress: this.routerAddress ?? 'not-configured',
+        satelliteVaultAddress: satellite?.address ?? 'not-configured',
         satelliteEvmChainId: satellite?.evmChainId ?? null,
         chainId: config.chainId,
         endpoint: config.endpoint,
         signerAddress: this.polkadotContext?.address,
-        mode: routerState
-          ? "evm-live"
-          : this.polkadotContext
-            ? "on-chain"
-            : "offline",
-        status: "pending",
+        mode: routerState ? 'evm-live' : this.polkadotContext ? 'on-chain' : 'offline',
+        status: 'pending',
         routerState: routerState ?? null,
-        note: "Hub→Satellite deposits are vault-mediated. Call vault.executeIntent(DestType.Hyper) to initiate cross-chain transfer.",
+        note: 'Hub→Satellite deposits are vault-mediated. Call vault.executeIntent(DestType.Hyper) to initiate cross-chain transfer.',
         message: `Cross-chain deposit of ${input.amount} from hub to satellite "${input.satelliteChainName}" prepared via ISMP`,
       },
     };
@@ -387,26 +359,22 @@ export class CrossChainRebalanceTool extends Tool {
     return {
       success: true,
       data: {
-        action: "cross_chain_withdraw",
+        action: 'cross_chain_withdraw',
         direction: input.direction,
         satelliteChainName: input.satelliteChainName,
         amount: input.amount,
         receiver: input.receiver,
-        hubVaultAddress: this.hubVaultAddress ?? "not-configured",
-        routerAddress: this.routerAddress ?? "not-configured",
-        satelliteVaultAddress: satellite?.address ?? "not-configured",
+        hubVaultAddress: this.hubVaultAddress ?? 'not-configured',
+        routerAddress: this.routerAddress ?? 'not-configured',
+        satelliteVaultAddress: satellite?.address ?? 'not-configured',
         satelliteEvmChainId: satellite?.evmChainId ?? null,
         chainId: config.chainId,
         endpoint: config.endpoint,
         signerAddress: this.polkadotContext?.address,
-        mode: routerState
-          ? "evm-live"
-          : this.polkadotContext
-            ? "on-chain"
-            : "offline",
-        status: "pending",
+        mode: routerState ? 'evm-live' : this.polkadotContext ? 'on-chain' : 'offline',
+        status: 'pending',
         routerState: routerState ?? null,
-        note: "Satellite→Hub withdrawals are initiated on the satellite side via ISMP and processed by the router onAccept().",
+        note: 'Satellite→Hub withdrawals are initiated on the satellite side via ISMP and processed by the router onAccept().',
         message: `Cross-chain withdraw of ${input.amount} from satellite "${input.satelliteChainName}" to hub prepared via ISMP. Receiver: ${input.receiver}`,
       },
     };

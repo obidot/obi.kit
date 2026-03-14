@@ -4,12 +4,14 @@ import type {
   EvmVaultConfig,
   ObiEvmContext,
   ObiPolkadotContext,
+  ObiWsClientOptions,
   SatelliteVaultConfig,
   SwapRouterConfig,
   ToolResult,
   TransactionSigner,
   VaultConfig,
 } from '@obidot-kit/core';
+import { ObiWsClient } from '@obidot-kit/core';
 import type { BifrostConfig, CrossChainConfig, ObiAgentApiConfig } from '@obidot-kit/llm';
 import {
   BatchStrategyTool,
@@ -161,6 +163,7 @@ export class ObiKit {
   private hubEvmContext: ObiEvmContext | undefined;
   private evmVaultConfig: EvmVaultConfig | undefined;
   private swapRouterConfig: SwapRouterConfig | undefined;
+  private wsClient: ObiWsClient | undefined;
 
   constructor(config: ObiKitConfig) {
     this.chainConfig = config.chainConfig;
@@ -582,6 +585,8 @@ export class ObiKit {
       customToolCount: this.customTools.length,
       customToolNames: this.customTools.map((t) => t.name),
       hasLegacySigner: this.signer !== undefined,
+      hasWebSocket: this.wsClient !== undefined,
+      wsConnected: this.wsClient?.connected ?? false,
       totalToolCount: this.getTools().length,
     };
   }
@@ -745,5 +750,48 @@ export class ObiKit {
         satellites: satelliteArray,
       }),
     ];
+  }
+
+  // ── WebSocket ────────────────────────────────────────────────────────
+
+  /**
+   * Opens a WebSocket connection to an Obidot agent event server.
+   *
+   * The returned `ObiWsClient` is also stored internally so that
+   * `disconnectWebSocket()` can close it without requiring the caller
+   * to hold a reference.
+   *
+   * @example
+   * ```ts
+   * kit.connectWebSocket({
+   *   url: 'ws://localhost:3011/ws',
+   *   onEvent: (e) => console.log(e.type, e),
+   * });
+   * ```
+   */
+  connectWebSocket(options: ObiWsClientOptions): ObiWsClient {
+    // Close any existing connection first
+    this.wsClient?.disconnect();
+    this.wsClient = new ObiWsClient(options);
+    this.wsClient.connect();
+    return this.wsClient;
+  }
+
+  /**
+   * Closes the WebSocket connection opened by `connectWebSocket()`.
+   *
+   * Safe to call when no connection is open — it is a no-op in that case.
+   */
+  disconnectWebSocket(): void {
+    this.wsClient?.disconnect();
+    this.wsClient = undefined;
+  }
+
+  /**
+   * Returns the current `ObiWsClient` instance if one has been created
+   * via `connectWebSocket()`, otherwise `undefined`.
+   */
+  getWsClient(): ObiWsClient | undefined {
+    return this.wsClient;
   }
 }
