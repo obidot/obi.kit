@@ -21,18 +21,21 @@
 
 import {
   type ChainConfig,
-  type EvmVaultConfig,
-  type VaultConfig,
   createEvmContext,
-  polkadotHubTestnet,
+  type EvmVaultConfig,
+  POLKADOT_HUB_TESTNET_CONTRACTS,
   POLKADOT_HUB_TESTNET_RPC,
+  PoolType,
+  polkadotHubTestnet,
+  type SwapRouterConfig,
+  type VaultConfig,
 } from '@obidot-kit/core';
 import {
+  OracleCheckTool,
+  PerformanceTool,
   VaultDepositTool,
   VaultWithdrawTool,
   WithdrawalQueueTool,
-  PerformanceTool,
-  OracleCheckTool,
 } from '@obidot-kit/llm';
 import { ObiKit } from '@obidot-kit/sdk';
 
@@ -41,8 +44,8 @@ import { ObiKit } from '@obidot-kit/sdk';
 // ---------------------------------------------------------------------------
 
 const HUB_RPC_URL = process.env['HUB_RPC_URL'] ?? POLKADOT_HUB_TESTNET_RPC;
-const VAULT_ADDRESS = process.env['VAULT_ADDRESS'] ?? '0x0000000000000000000000000000000000000001';
-const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? '0x0000000000000000000000000000000000000002';
+const VAULT_ADDRESS = process.env['VAULT_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.vaultAddress;
+const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.assetAddress;
 const PRIVATE_KEY = process.env['PRIVATE_KEY'];
 
 const chainConfig: ChainConfig = {
@@ -67,6 +70,16 @@ const evmVaultConfig: EvmVaultConfig = {
   chainId: polkadotHubTestnet.id,
 };
 
+const swapRouterConfig: SwapRouterConfig = {
+  routerAddress: (process.env['SWAP_ROUTER_ADDRESS'] ??
+    POLKADOT_HUB_TESTNET_CONTRACTS.swapRouterAddress) as `0x${string}`,
+  quoterAddress: (process.env['SWAP_QUOTER_ADDRESS'] ??
+    POLKADOT_HUB_TESTNET_CONTRACTS.swapQuoterAddress) as `0x${string}`,
+  adapters: {
+    [PoolType.HydrationOmnipool]: POLKADOT_HUB_TESTNET_CONTRACTS.hydrationAdapterAddress,
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Agent Setup
 // ---------------------------------------------------------------------------
@@ -81,10 +94,13 @@ async function main(): Promise<void> {
   console.log('[1] Initializing ObiKit SDK...');
   const kit = new ObiKit({ chainConfig });
   kit.registerVault(vaultConfig);
-  console.log(`   Chain  : ${chainConfig.name} (chain ID ${chainConfig.chainId})`);
-  console.log(`   RPC    : ${HUB_RPC_URL}`);
-  console.log(`   Vault  : ${VAULT_ADDRESS}`);
-  console.log(`   Asset  : ${ASSET_ADDRESS}`);
+  kit.registerSwapRouter(swapRouterConfig);
+  console.log(`   Chain       : ${chainConfig.name} (chain ID ${chainConfig.chainId})`);
+  console.log(`   RPC         : ${HUB_RPC_URL}`);
+  console.log(`   Vault       : ${VAULT_ADDRESS}`);
+  console.log(`   Asset       : ${ASSET_ADDRESS}`);
+  console.log(`   SwapRouter  : ${swapRouterConfig.routerAddress}`);
+  console.log(`   SwapQuoter  : ${swapRouterConfig.quoterAddress}`);
   console.log();
 
   // 2. Determine mode

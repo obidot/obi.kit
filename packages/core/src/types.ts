@@ -32,13 +32,13 @@ export enum BifrostCurrencyId {
  * Human-readable labels for each Bifrost strategy type.
  */
 export const BIFROST_STRATEGY_LABELS: Record<BifrostStrategyType, string> = {
-  [BifrostStrategyType.MintVToken]: "Mint vToken (SLP)",
-  [BifrostStrategyType.RedeemVToken]: "Redeem vToken (SLP)",
-  [BifrostStrategyType.DEXSwap]: "DEX Swap",
-  [BifrostStrategyType.FarmDeposit]: "Farm Deposit",
-  [BifrostStrategyType.FarmWithdraw]: "Farm Withdraw",
-  [BifrostStrategyType.FarmClaim]: "Farm Claim Rewards",
-  [BifrostStrategyType.SALPContribute]: "SALP Contribute",
+  [BifrostStrategyType.MintVToken]: 'Mint vToken (SLP)',
+  [BifrostStrategyType.RedeemVToken]: 'Redeem vToken (SLP)',
+  [BifrostStrategyType.DEXSwap]: 'DEX Swap',
+  [BifrostStrategyType.FarmDeposit]: 'Farm Deposit',
+  [BifrostStrategyType.FarmWithdraw]: 'Farm Withdraw',
+  [BifrostStrategyType.FarmClaim]: 'Farm Claim Rewards',
+  [BifrostStrategyType.SALPContribute]: 'SALP Contribute',
 };
 
 // ── Cross-Chain Message Types ───────────────────────────────────────────
@@ -286,7 +286,7 @@ export interface BifrostYieldProduct {
   /** Product name (e.g. "vDOT Liquid Staking") */
   readonly product: string;
   /** Product category */
-  readonly category: "SLP" | "DEX" | "Farming" | "SALP";
+  readonly category: 'SLP' | 'DEX' | 'Farming' | 'SALP';
   /** Annual percentage yield */
   readonly apy: number;
   /** Input currency for the product */
@@ -427,10 +427,10 @@ export enum PoolType {
  * Human-readable labels for each pool type.
  */
 export const POOL_TYPE_LABELS: Record<PoolType, string> = {
-  [PoolType.HydrationOmnipool]: "Hydration Omnipool",
-  [PoolType.AssetHubPair]: "AssetHub Pair",
-  [PoolType.BifrostDEX]: "Bifrost DEX",
-  [PoolType.Custom]: "Custom",
+  [PoolType.HydrationOmnipool]: 'Hydration Omnipool',
+  [PoolType.AssetHubPair]: 'AssetHub Pair',
+  [PoolType.BifrostDEX]: 'Bifrost DEX',
+  [PoolType.Custom]: 'Custom',
 };
 
 /**

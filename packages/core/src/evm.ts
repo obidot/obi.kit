@@ -14,9 +14,9 @@ import {
   http,
   type PublicClient,
   type WalletClient,
-} from "viem";
+} from 'viem';
 
-import type { PoolType } from "./types.js";
+import type { PoolType } from './types.js';
 
 // ── Obi EVM context types ───────────────────────────────────────────────
 
@@ -91,9 +91,7 @@ export interface CreateEvmContextOptions {
  * });
  * ```
  */
-export function createEvmContext(
-  options: CreateEvmContextOptions,
-): ObiEvmContext {
+export function createEvmContext(options: CreateEvmContextOptions): ObiEvmContext {
   const transport = http(options.rpcUrl);
 
   const client = createPublicClient({
@@ -175,9 +173,7 @@ export interface CreateSwapRouterContextOptions extends CreateEvmContextOptions 
  * });
  * ```
  */
-export function createSwapRouterContext(
-  options: CreateSwapRouterContextOptions,
-): ObiSwapRouterContext {
+export function createSwapRouterContext(options: CreateSwapRouterContextOptions): ObiSwapRouterContext {
   const base = createEvmContext(options);
 
   return {

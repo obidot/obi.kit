@@ -1,9 +1,5 @@
-import { Tool } from "@langchain/core/tools";
-import type {
-  EvmVaultConfig,
-  ObiEvmContext,
-  ToolResult,
-} from "@obidot-kit/core";
+import { Tool } from '@langchain/core/tools';
+import type { EvmVaultConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
 
 /**
  * Parsed input for the swap quote tool.
@@ -41,10 +37,10 @@ export interface SwapQuoteToolOptions {
  * the best quote (or all quotes) for a given token pair.
  */
 export class SwapQuoteTool extends Tool {
-  name = "swap_quote";
+  name = 'swap_quote';
 
   description =
-    "Get a swap quote from the Obidot DEX aggregator on Polkadot Hub. " +
+    'Get a swap quote from the Obidot DEX aggregator on Polkadot Hub. ' +
     'Input is a JSON string with "tokenIn" (ERC-20 address), "tokenOut" (ERC-20 address), ' +
     '"amountIn" (amount in base units as string), optional "pool" (pool address, default auto-detect), ' +
     'and optional "allQuotes" (boolean, default false — return all quotes instead of just the best).';
@@ -82,36 +78,35 @@ export class SwapQuoteTool extends Tool {
       throw new Error(`Invalid JSON input: ${input}`);
     }
 
-    if (typeof parsed !== "object" || parsed === null) {
-      throw new Error("Input must be a JSON object");
+    if (typeof parsed !== 'object' || parsed === null) {
+      throw new Error('Input must be a JSON object');
     }
 
     const obj = parsed as Record<string, unknown>;
 
-    if (typeof obj["tokenIn"] !== "string" || obj["tokenIn"].length === 0) {
+    if (typeof obj['tokenIn'] !== 'string' || obj['tokenIn'].length === 0) {
       throw new Error('Missing or invalid "tokenIn" field');
     }
-    if (typeof obj["tokenOut"] !== "string" || obj["tokenOut"].length === 0) {
+    if (typeof obj['tokenOut'] !== 'string' || obj['tokenOut'].length === 0) {
       throw new Error('Missing or invalid "tokenOut" field');
     }
-    if (typeof obj["amountIn"] !== "string" || obj["amountIn"].length === 0) {
+    if (typeof obj['amountIn'] !== 'string' || obj['amountIn'].length === 0) {
       throw new Error('Missing or invalid "amountIn" field');
     }
 
     return {
-      pool: typeof obj["pool"] === "string" ? obj["pool"] : undefined,
-      tokenIn: obj["tokenIn"],
-      tokenOut: obj["tokenOut"],
-      amountIn: obj["amountIn"],
-      allQuotes:
-        typeof obj["allQuotes"] === "boolean" ? obj["allQuotes"] : false,
+      pool: typeof obj['pool'] === 'string' ? obj['pool'] : undefined,
+      tokenIn: obj['tokenIn'],
+      tokenOut: obj['tokenOut'],
+      amountIn: obj['amountIn'],
+      allQuotes: typeof obj['allQuotes'] === 'boolean' ? obj['allQuotes'] : false,
     };
   }
 
   private async execute(input: SwapQuoteInput): Promise<ToolResult> {
     const quoterAddress = this.quoterAddress;
     if (!quoterAddress) {
-      throw new Error("No SwapQuoter address configured");
+      throw new Error('No SwapQuoter address configured');
     }
 
     const ctx = this.evmContext;
@@ -123,16 +118,15 @@ export class SwapQuoteTool extends Tool {
           tokenIn: input.tokenIn,
           tokenOut: input.tokenOut,
           amountIn: input.amountIn,
-          mode: "stub",
-          message: "No EVM context — cannot read on-chain quotes",
+          mode: 'stub',
+          message: 'No EVM context — cannot read on-chain quotes',
         },
       };
     }
 
-    const { SWAP_QUOTER_ABI } = await import("@obidot-kit/core");
+    const { SWAP_QUOTER_ABI } = await import('@obidot-kit/core');
 
-    const pool = (input.pool ??
-      "0x0000000000000000000000000000000000000000") as `0x${string}`;
+    const pool = (input.pool ?? '0x0000000000000000000000000000000000000000') as `0x${string}`;
     const tokenIn = input.tokenIn as `0x${string}`;
     const tokenOut = input.tokenOut as `0x${string}`;
     const amountIn = BigInt(input.amountIn);
@@ -141,7 +135,7 @@ export class SwapQuoteTool extends Tool {
       const quotes = (await ctx.client.readContract({
         address: quoterAddress,
         abi: SWAP_QUOTER_ABI,
-        functionName: "getAllQuotes",
+        functionName: 'getAllQuotes',
         args: [pool, tokenIn, tokenOut, amountIn],
       })) as readonly {
         source: number;
@@ -168,7 +162,7 @@ export class SwapQuoteTool extends Tool {
           amountIn: amountIn.toString(),
           quotesCount: serialised.length,
           quotes: serialised,
-          mode: "evm",
+          mode: 'evm',
         },
         message: `Found ${serialised.length} quote(s) for ${tokenIn} → ${tokenOut}.`,
       };
@@ -178,7 +172,7 @@ export class SwapQuoteTool extends Tool {
     const best = (await ctx.client.readContract({
       address: quoterAddress,
       abi: SWAP_QUOTER_ABI,
-      functionName: "getBestQuote",
+      functionName: 'getBestQuote',
       args: [pool, tokenIn, tokenOut, amountIn],
     })) as {
       source: number;
@@ -202,7 +196,7 @@ export class SwapQuoteTool extends Tool {
           amountIn: best.amountIn.toString(),
           amountOut: best.amountOut.toString(),
         },
-        mode: "evm",
+        mode: 'evm',
       },
       message: `Best quote: ${best.amountOut.toString()} out via pool type ${best.source}.`,
     };

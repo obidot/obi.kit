@@ -1,5 +1,12 @@
 import { Tool } from '@langchain/core/tools';
-import type { ChainConfig, EvmVaultConfig, ObiEvmContext, ObiPolkadotContext, ToolResult, VaultAction } from '@obidot-kit/core';
+import type {
+  ChainConfig,
+  EvmVaultConfig,
+  ObiEvmContext,
+  ObiPolkadotContext,
+  ToolResult,
+  VaultAction,
+} from '@obidot-kit/core';
 
 export interface VaultDepositInput {
   /** The vault address or identifier to deposit into */
@@ -146,9 +153,7 @@ export class VaultDepositTool extends Tool {
 
     // Use configured asset address as default
     const asset =
-      typeof obj['asset'] === 'string' && obj['asset'].length > 0
-        ? obj['asset']
-        : this.vaultConfig?.assetAddress;
+      typeof obj['asset'] === 'string' && obj['asset'].length > 0 ? obj['asset'] : this.vaultConfig?.assetAddress;
 
     if (!asset) {
       throw new Error('Missing "asset" field and no asset configured');

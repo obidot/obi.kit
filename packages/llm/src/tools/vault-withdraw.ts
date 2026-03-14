@@ -1,5 +1,12 @@
 import { Tool } from '@langchain/core/tools';
-import type { ChainConfig, EvmVaultConfig, ObiEvmContext, ObiPolkadotContext, ToolResult, VaultAction } from '@obidot-kit/core';
+import type {
+  ChainConfig,
+  EvmVaultConfig,
+  ObiEvmContext,
+  ObiPolkadotContext,
+  ToolResult,
+  VaultAction,
+} from '@obidot-kit/core';
 
 export interface VaultWithdrawInput {
   /** The vault address or identifier to withdraw from */
@@ -195,7 +202,11 @@ export class VaultWithdrawTool extends Tool {
   /**
    * Execute a real ERC-4626 withdraw or redeem via viem.
    */
-  private async executeEvmWithdraw(action: VaultAction, receiver?: string, redeemShares?: boolean): Promise<ToolResult> {
+  private async executeEvmWithdraw(
+    action: VaultAction,
+    receiver?: string,
+    redeemShares?: boolean,
+  ): Promise<ToolResult> {
     const ctx = this.evmContext!;
     const wallet = ctx.walletClient!;
     const account = ctx.account!;

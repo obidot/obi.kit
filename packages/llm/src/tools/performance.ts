@@ -168,10 +168,7 @@ export class PerformanceTool extends Tool {
         idleAssets: idleAssets.toString(),
         totalRemoteAssets: totalRemoteAssets.toString(),
         depositCap: depositCap.toString(),
-        utilizationBps:
-          totalAssets > 0n
-            ? ((totalRemoteAssets * 10000n) / totalAssets).toString()
-            : '0',
+        utilizationBps: totalAssets > 0n ? ((totalRemoteAssets * 10000n) / totalAssets).toString() : '0',
         paused,
         emergencyMode,
       };
@@ -188,10 +185,7 @@ export class PerformanceTool extends Tool {
       })) as readonly [bigint, bigint, bigint, bigint, bigint];
 
       const [totalDeployed, totalReturned, executionCount, successCount, lastExecutedAt] = protocolResult;
-      const successRate =
-        executionCount > 0n
-          ? `${((successCount * 10000n) / executionCount).toString()} bps`
-          : 'N/A';
+      const successRate = executionCount > 0n ? `${((successCount * 10000n) / executionCount).toString()} bps` : 'N/A';
 
       data['protocolPerformance'] = {
         protocol: protocolAddr,
