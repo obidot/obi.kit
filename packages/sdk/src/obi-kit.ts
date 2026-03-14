@@ -23,11 +23,14 @@ import {
   ExecuteLocalSwapTool,
   ObiAgentApi,
   OracleCheckTool,
+  OracleUpdateTool,
   PerformanceTool,
   SwapExecuteTool,
   SwapMultiHopTool,
   SwapQuoteTool,
+  VaultAdminTool,
   VaultDepositTool,
+  VaultPolicyTool,
   VaultStateTool,
   VaultWithdrawTool,
   WithdrawalQueueTool,
@@ -630,6 +633,9 @@ export class ObiKit {
    * - BatchStrategyTool (batch executeStrategies)
    * - PerformanceTool (read-only performance metrics)
    * - OracleCheckTool (read-only oracle/circuit breaker status)
+   * - OracleUpdateTool (push new price to KeeperOracle, requires KEEPER_ROLE)
+   * - VaultPolicyTool (read-only policy: parachains, protocols, caps)
+   * - VaultAdminTool (read-only admin state: shares, fees, roles)
    * - SwapQuoteTool (read-only swap quotes, requires swapRouterConfig)
    * - SwapExecuteTool (single-hop swap, requires swapRouterConfig)
    * - SwapMultiHopTool (multi-hop swap, requires swapRouterConfig)
@@ -667,6 +673,17 @@ export class ObiKit {
         vaultConfig: this.evmVaultConfig,
       }),
       new OracleCheckTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new OracleUpdateTool({
+        evmContext: this.hubEvmContext,
+      }),
+      new VaultPolicyTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new VaultAdminTool({
         evmContext: this.hubEvmContext,
         vaultConfig: this.evmVaultConfig,
       }),

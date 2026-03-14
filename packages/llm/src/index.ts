@@ -61,6 +61,11 @@ export type {
 } from './tools/oracle-check.js';
 export { OracleCheckTool } from './tools/oracle-check.js';
 export type {
+  OracleUpdateInput,
+  OracleUpdateToolOptions,
+} from './tools/oracle-update.js';
+export { OracleUpdateTool } from './tools/oracle-update.js';
+export type {
   PerformanceInput,
   PerformanceToolOptions,
 } from './tools/performance.js';
@@ -82,10 +87,20 @@ export type {
 } from './tools/swap-quote.js';
 export { SwapQuoteTool } from './tools/swap-quote.js';
 export type {
+  VaultAdminInput,
+  VaultAdminToolOptions,
+} from './tools/vault-admin.js';
+export { VaultAdminTool } from './tools/vault-admin.js';
+export type {
   VaultDepositInput,
   VaultDepositToolOptions,
 } from './tools/vault-deposit.js';
 export { VaultDepositTool } from './tools/vault-deposit.js';
+export type {
+  VaultPolicyInput,
+  VaultPolicyToolOptions,
+} from './tools/vault-policy.js';
+export { VaultPolicyTool } from './tools/vault-policy.js';
 export type {
   VaultStateInput,
   VaultStateToolOptions,
