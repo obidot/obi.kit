@@ -1,4 +1,10 @@
 import { parseArgs } from 'node:util';
+import { runInfo } from './commands/info.js';
+import { runInit } from './commands/init.js';
+import { runAgent } from './commands/run.js';
+import { CLI_VERSION } from './index.js';
+
+// ─── Help / Version ───────────────────────────────────────────────────────────
 
 const helpText = `
   @obidot-kit/cli — Obidot Kit Agent CLI
@@ -7,45 +13,26 @@ const helpText = `
     obi-kit <command> [options]
 
   Commands:
-    init          Scaffold a new Obidot Kit agent project
+    init [name]   Scaffold a new Obidot Kit agent project
     run           Run an agent with the given configuration
     info          Display environment and package information
 
   Options:
     --help, -h    Show this help message
     --version     Show version number
-    --config, -c  Path to agent config file (default: obi-kit.config.ts)
+    --config, -c  Path to agent config file (default: obi-kit.config.json)
     --verbose     Enable verbose logging
 `;
 
 function printVersion(): void {
-  console.log('0.1.0');
+  console.log(CLI_VERSION);
 }
 
 function printHelp(): void {
   console.log(helpText);
 }
 
-async function handleInit(): Promise<void> {
-  console.log('🚀 Scaffolding a new Obidot Kit agent project...');
-  console.log('   (not yet implemented — coming soon)');
-}
-
-async function handleRun(config: string, verbose: boolean): Promise<void> {
-  console.log(`▶ Running agent with config: ${config}`);
-  if (verbose) {
-    console.log('  Verbose mode enabled');
-  }
-  console.log('   (not yet implemented — coming soon)');
-}
-
-async function handleInfo(): Promise<void> {
-  console.log('ℹ Obidot Kit Environment');
-  console.log(`  Node.js:  ${process.version}`);
-  console.log(`  Platform: ${process.platform}`);
-  console.log(`  Arch:     ${process.arch}`);
-  console.log(`  CLI:      @obidot-kit/cli@0.1.0`);
-}
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -53,7 +40,7 @@ async function main(): Promise<void> {
     options: {
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', default: false },
-      config: { type: 'string', short: 'c', default: 'obi-kit.config.ts' },
+      config: { type: 'string', short: 'c', default: 'obi-kit.config.json' },
       verbose: { type: 'boolean', default: false },
     },
     strict: true,
@@ -73,13 +60,16 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'init':
-      await handleInit();
+      await runInit(positionals[1]);
       break;
     case 'run':
-      await handleRun(values.config ?? 'obi-kit.config.ts', values.verbose ?? false);
+      await runAgent({
+        configPath: values.config,
+        verbose: values.verbose,
+      });
       break;
     case 'info':
-      await handleInfo();
+      await runInfo();
       break;
     default:
       console.error(`Unknown command: ${command}`);
