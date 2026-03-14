@@ -170,11 +170,19 @@ export class VaultDepositTool extends Tool {
   protected async executeDeposit(action: VaultAction, receiver?: string): Promise<ToolResult> {
     // EVM mode: real on-chain deposit via viem
     if (this.evmContext?.walletClient && this.vaultConfig) {
-      return this.executeEvmDeposit(action, receiver);
+      return this.executeEvmDeposit(action, receiver, this.evmContext);
     }
 
-    // Polkadot mode: delegate to PAK (stub for now)
+    // Polkadot mode: if the polkadot context has an embedded EVM context,
+    // delegate to the EVM path (Polkadot Hub uses pallet-revive + ETH-RPC,
+    // not a substrate extrinsic — see polkadot.ts for rationale).
     if (this.polkadotContext) {
+      const embeddedEvm = this.polkadotContext.evmContext;
+      if (embeddedEvm?.walletClient && this.vaultConfig) {
+        return this.executeEvmDeposit(action, receiver, embeddedEvm);
+      }
+
+      // No EVM context available — return pending stub
       return {
         success: true,
         data: {
@@ -212,9 +220,16 @@ export class VaultDepositTool extends Tool {
    * 1. Check ERC-20 allowance, approve if insufficient.
    * 2. Call `vault.deposit(assets, receiver)`.
    * 3. Return tx hash + shares preview.
+   *
+   * @param ctx - The EVM context to use. May be `this.evmContext` (direct EVM
+   *   mode) or `this.polkadotContext.evmContext` (Polkadot mode with embedded
+   *   viem client targeting the Polkadot Hub ETH-RPC).
    */
-  private async executeEvmDeposit(action: VaultAction, receiver?: string): Promise<ToolResult> {
-    const ctx = this.evmContext!;
+  private async executeEvmDeposit(
+    action: VaultAction,
+    receiver: string | undefined,
+    ctx: ObiEvmContext,
+  ): Promise<ToolResult> {
     const wallet = ctx.walletClient!;
     const account = ctx.account!;
     const vaultAddress = action.vaultAddress as `0x${string}`;
@@ -289,7 +304,9 @@ export class VaultDepositTool extends Tool {
       account: account as `0x${string}`,
     });
 
-    const receipt = await ctx.client.waitForTransactionReceipt({ hash: depositHash });
+    const receipt = await ctx.client.waitForTransactionReceipt({
+      hash: depositHash,
+    });
 
     return {
       success: true,
