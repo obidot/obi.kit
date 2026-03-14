@@ -12,12 +12,12 @@ Other developers can install `@obidot-kit/sdk` (or individual packages) to enabl
 
 ## Packages
 
-| Package                               | Description                                                                                              | npm                                                                                                     |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`@obidot-kit/core`](./packages/core) | Core types, interfaces, error classes, ABIs, chain abstractions (EVM + Polkadot)                         | [![npm](https://img.shields.io/npm/v/@obidot-kit/core)](https://www.npmjs.com/package/@obidot-kit/core) |
-| [`@obidot-kit/llm`](./packages/llm)   | 16 LangChain tools (vault, DEX aggregator, Bifrost, cross-chain, intent), agent factory, base tool class | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm)   |
-| [`@obidot-kit/sdk`](./packages/sdk)   | High-level SDK combining core + llm into a unified API                                                   | [![npm](https://img.shields.io/npm/v/@obidot-kit/sdk)](https://www.npmjs.com/package/@obidot-kit/sdk)   |
-| [`@obidot-kit/cli`](./packages/cli)   | CLI tool for scaffolding and running Obidot Kit agents                                                   | [![npm](https://img.shields.io/npm/v/@obidot-kit/cli)](https://www.npmjs.com/package/@obidot-kit/cli)   |
+| Package                               | Description                                                                                               | npm                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [`@obidot-kit/core`](./packages/core) | Core types, interfaces, error classes, ABIs, chain abstractions, EVM + Polkadot context, WebSocket client | [![npm](https://img.shields.io/npm/v/@obidot-kit/core)](https://www.npmjs.com/package/@obidot-kit/core) |
+| [`@obidot-kit/llm`](./packages/llm)   | 19+ LangChain tools (vault, DEX aggregator, Bifrost, cross-chain, intent, oracle, admin), agent factory   | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm)   |
+| [`@obidot-kit/sdk`](./packages/sdk)   | High-level SDK combining core + llm into a unified API                                                    | [![npm](https://img.shields.io/npm/v/@obidot-kit/sdk)](https://www.npmjs.com/package/@obidot-kit/sdk)   |
+| [`@obidot-kit/cli`](./packages/cli)   | CLI tool for scaffolding and running Obidot Kit agents (`init` / `run` / `info`)                          | [![npm](https://img.shields.io/npm/v/@obidot-kit/cli)](https://www.npmjs.com/package/@obidot-kit/cli)   |
 
 ### Dependency Graph
 
@@ -49,33 +49,36 @@ import {
   CrossChainStateTool,
 } from "@obidot-kit/llm";
 
-// 1. Initialize the SDK with your chain config
-const kit = new ObiKit({
-  chainConfig: {
-    endpoint: "wss://rpc.polkadot.io",
-    chainId: "polkadot",
-    name: "Polkadot",
-  },
+import { createEvmContext } from "@obidot-kit/core";
+import { OBIDOT_VAULT_ADDRESS } from "@obidot-kit/core";
+
+// 1. Create an EVM context pointing at the deployed vault on Polkadot Hub Paseo
+const evmContext = createEvmContext({
+  rpcUrl: "https://eth-rpc-testnet.polkadot.io/",
+  privateKey: process.env.PRIVATE_KEY as `0x${string}`,
 });
 
-// 2. Register a vault
+// 2. Initialize the SDK
+const kit = new ObiKit({ evmContext });
+
+// 3. Register the deployed vault
 kit.registerVault({
-  id: "my-vault",
-  name: "My DOT Vault",
-  address: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-  chain: kit.getChainConfig(),
+  id: "obidot-paseo",
+  name: "Obidot DOT Vault",
+  address: OBIDOT_VAULT_ADDRESS, // 0x03473a95971Ba0496786a615e21b1e87bDFf0025
   asset: "DOT",
   decimals: 10,
 });
 
-// 3. Get LangChain-compatible tools for your agent
+// 4. Get LangChain-compatible tools for your agent
 const tools = kit.getTools();
-// → [VaultDepositTool, VaultWithdrawTool, VaultStateTool, ExecuteStrategyTool,
-//    BifrostYieldTool, BifrostStrategyTool, CrossChainStateTool, CrossChainRebalanceTool,
+// → [VaultDepositTool, VaultWithdrawTool, VaultStateTool, VaultPolicyTool,
+//    VaultAdminTool, BifrostYieldTool, BifrostStrategyTool,
+//    CrossChainStateTool, CrossChainRebalanceTool,
 //    SwapQuoteTool, SwapExecuteTool, SwapMultiHopTool, ExecuteLocalSwapTool,
-//    ExecuteIntentTool, …]
+//    ExecuteIntentTool, OracleUpdateTool, OracleCheckTool, …]
 
-// 4. Bind tools to any LangChain-compatible LLM
+// 5. Bind tools to any LangChain-compatible LLM
 // const agent = kit.createAgent(yourChatModel);
 ```
 
@@ -155,9 +158,9 @@ pnpm build
 ```
 obi-kit/
 ├── packages/
-│   ├── core/           # Core types, interfaces, error classes, ABIs, EVM context
-│   ├── cli/            # CLI tool (@obidot-kit/cli)
-│   ├── llm/            # 16 LangChain tools & agent factory
+│   ├── core/           # Core types, interfaces, error classes, ABIs, EVM context, WebSocket client
+│   ├── cli/            # CLI tool (@obidot-kit/cli) — init / run / info commands
+│   ├── llm/            # 19+ LangChain tools & agent factory
 │   └── sdk/            # High-level SDK facade
 ├── examples/
 │   ├── vault-agent/         # Example: deposit/withdraw via agent
@@ -240,18 +243,23 @@ All packages are published with public access under the `@obidot-kit` npm scope.
 
 **v0.2.0 — Complete**
 
-- DEX aggregator support: 3 new ABIs (SwapRouter, SwapQuoter, PoolAdapter), 3 new LangChain tools (SwapQuoteTool, SwapExecuteTool, SwapMultiHopTool)
-- Universal intent system: 2 new tools (ExecuteLocalSwapTool, ExecuteIntentTool), DestType/IntentAsset/Destination/UniversalIntent types
-- Updated ObidotVault ABI: `executeIntent`, `executeLocalSwap`, `setSwapRouter`, `swapRouter`, `intentNonces`, `SOLVER_ROLE`
-- ObiKit SDK facade: 7 new swap/intent public methods, `registerSwapRouter()`, `buildEvmVaultTools()` now returns 11 tools
-- `PoolType` enum (HydrationOmnipool, AssetHubPair, BifrostDEX, Custom), `SwapRouterConfig`, `ObiSwapRouterContext`
-- 16 total LangChain tools, 225 tests passing
+- Real deployed contract addresses on Polkadot Hub Paseo TestNet (chain 420420417)
+- ABI sync pipeline (`scripts/sync-abis.ts`) — generates TypeScript ABI files from Foundry artifacts
+- Real `EvmBifrostStrategyService` with live `viem.writeContract` calls to `BifrostAdapter`
+- Real `EvmCrossChainService` with live ISMP dispatch via `CrossChainRouter`
+- Real `BifrostYieldTool` data — fetches vDOT/vKSM/vGLMR/vBNC APYs from Bifrost RPC, graceful fallback
+- `ObiWsClient` — WebSocket client for real-time agent event subscriptions
+- Full `@obidot-kit/cli`: `obi-kit init` / `obi-kit run` / `obi-kit info`
+- New tools: `VaultPolicyTool`, `OracleUpdateTool`, `VaultAdminTool`
+- `ObiPolkadotContext.evmContext` — EVM delegation via Polkadot Hub ETH-RPC (`pallet-revive`)
+- 19+ LangChain tools, 364 tests passing
 
 **v0.3.0 — Planned**
 
-- Real on-chain contract connections (viem clients for Polkadot Hub TestNet)
-- Live vault agent with EIP-712 signing against deployed contracts
-- Full `@obidot-kit/cli` scaffold command
+- `obi.index` integration — real-time vault event indexing via GraphQL subscriptions
+- Live front-end wiring (`obidot/app`) — real deposit/swap transactions on Paseo
+- Autonomous AI agent (`obidot/agent`) — EIP-712 intent signing + auto-execution, 24/7 operation
+- Additional DEX adapters: `RelayTeleportAdapter` (Paseo relay chain), `KaruraAdapter` (Kusama Hub)
 
 ## Contributing
 

@@ -1,6 +1,6 @@
 {
   "name": "@obidot-kit/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "High-level SDK combining core and LLM modules for Obidot Kit",
   "type": "module",
   "license": "MIT",

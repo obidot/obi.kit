@@ -1,79 +1,106 @@
-# ObiKit Cross-Chain + Bifrost Integration
+# ObiKit v0.2.0 — Task Tracker
 
-## Status: ✅ Complete
+## Status: ✅ Complete (v0.2.0)
 
-## Completed Tasks
+All 9 phases of the obi-kit rebuild plan are done and committed.
 
-### Phase 1: Core Package (`@obidot-kit/core`)
-- [x] Add Bifrost types/enums (`BifrostStrategyType`, `BifrostCurrencyId`, `BIFROST_STRATEGY_LABELS`)
-- [x] Add cross-chain types (`CrossChainMessageType`, `SatelliteVaultConfig`, `CrossChainVaultState`, `SatelliteChainState`)
-- [x] Add Bifrost yield types (`BifrostYieldProduct`, `BifrostProtocolConfig`)
-- [x] Add error classes (`BifrostOperationError`, `CrossChainSyncError`, `SatelliteVaultError`)
-- [x] Add ABIs (`BIFROST_ADAPTER_ABI`, `CROSS_CHAIN_ROUTER_ABI`, `SATELLITE_VAULT_ABI`, `VAULT_CROSS_CHAIN_ABI`)
-- [x] Add EVM context helper (`createEvmContext`, `destroyEvmContext`, `ObiEvmContext`)
-- [x] Add `viem` as peer dependency
-- [x] Update barrel exports in `index.ts`
+---
 
-### Phase 2: LLM Package (`@obidot-kit/llm`)
-- [x] Add `BifrostYieldTool` — fetch Bifrost yield products with filtering
-- [x] Add `BifrostStrategyTool` — execute/simulate Bifrost strategies with validation guardrails
-- [x] Add `CrossChainStateTool` — aggregate hub + satellite vault state
-- [x] Add `CrossChainRebalanceTool` — trigger cross-chain deposit/withdraw requests
-- [x] Add `BifrostConfig` and `CrossChainConfig` interfaces to `ObiAgentApi`
-- [x] Update `ObiAgentApi` with `getBifrostTools()` and `getCrossChainTools()`
-- [x] Export `BifrostConfig` and `CrossChainConfig` from package index
+## Completed — v0.2.0
 
-### Phase 3: SDK Package (`@obidot-kit/sdk`)
-- [x] Extend `ObiKitConfig` with `satellites`, `bifrostConfig`, `evmContexts`
-- [x] Add satellite vault registry (`registerSatelliteVault`, `removeSatelliteVault`, `getSatelliteVaults`)
-- [x] Add EVM context management (`addEvmContext`, `removeEvmContext`, `getEvmContexts`)
-- [x] Add `getBifrostTools()` and `getCrossChainTools()` methods
-- [x] Update `getTools()` to include Bifrost + cross-chain tools
-- [x] Add offline tool builders (`buildOfflineBifrostTools`, `buildOfflineCrossChainTools`)
-- [x] Update `inspect()` with satellite/Bifrost metadata
-- [x] Re-export new types from SDK index
+### Phase 1 — ABI Sync Pipeline
+- [x] `scripts/sync-abis.ts` — reads Foundry `out/` artifacts, generates TypeScript ABI files
+- [x] All 6 ABI files regenerated from live `obi.router` artifacts
+- [x] Root `package.json` `sync:abis` script
 
-### Phase 4: Examples
-- [x] Create `examples/cross-chain-agent/` with full demo of all new features
+### Phase 2 — Real `BifrostStrategyService`
+- [x] `EvmBifrostStrategyService` — live `viem.writeContract` calls to `BifrostAdapter`
+- [x] All 7 strategy types wired (MINT_VTOKEN, REDEEM_VTOKEN, SWAP, ADD_LIQUIDITY, etc.)
+- [x] Wired into `ObiKit` facade when EVM context + bifrostConfig present
 
-### Phase 5: Tests
-- [x] `packages/core/test/types.test.ts` — enum/type/label validation
-- [x] `packages/core/test/evm.test.ts` — EVM context create/destroy
-- [x] `packages/llm/test/bifrost-yield.test.ts` — yield tool behavior & filtering
-- [x] `packages/llm/test/bifrost-strategy.test.ts` — strategy validation & execution
-- [x] `packages/llm/test/cross-chain-state.test.ts` — state aggregation & filtering
-- [x] `packages/sdk/test/obi-kit-cross-chain.test.ts` — SDK integration tests
+### Phase 3 — Real Cross-Chain Service
+- [x] `EvmCrossChainService` — live ISMP dispatch via `CrossChainRouter`
+- [x] `broadcastSync()`, `readRouterState()` implemented
+- [x] `CrossChainRebalanceTool` delegates to real service
 
-### Phase 6: Fix Build Issues
-- [x] Fix `override` modifier on `cause` property in error classes (TS4114)
-- [x] Export `BifrostConfig` and `CrossChainConfig` from LLM package index (TS2459)
-- [x] Fix ESM `require()` → `import` in SDK test (ESM exports resolution)
-- [x] Fix bracket notation for `Record<string, unknown>` access in example (TS4111)
-- [x] Remove unused imports (`vi`, `BifrostProtocolConfig`)
-- [x] Replace non-null assertion with guard clause in test
-- [x] Fix Biome formatting (single quotes, import ordering)
+### Phase 4 — Real `BifrostYieldTool` Data
+- [x] Fetches vDOT exchange rate from Bifrost Paseo RPC (`bifrost-rpc.paseo.liebi.com`)
+- [x] Graceful fallback to static rates when RPC unavailable
+- [x] Note: `api.bifrost.app` is dead — uses RPC directly
 
-## Verification Results
+### Phase 5 — WebSocket Support
+- [x] `ObiWsClient` — auto-reconnect, event parsing, `send()`
+- [x] `ObiKit.connectWebSocket()` / `disconnectWebSocket()`
+- [x] Exported from `@obidot-kit/core`
+
+### Phase 6 — CLI Implementation
+- [x] `obi-kit init` — scaffolds new agent project with `.env.example`, starter `index.ts`
+- [x] `obi-kit run` — loads `.env`, runs agent REPL
+- [x] `obi-kit info` — prints version, chain config, available tools
+- [x] 33 CLI tests passing
+
+### Phase 7 — Additional Tools
+- [x] `VaultPolicyTool` — reads parachain/protocol allowlists, exposure caps
+- [x] `OracleUpdateTool` — calls `KeeperOracle.setPrice()` (requires KEEPER_ROLE)
+- [x] `VaultAdminTool` — reads total assets, shares, paused state, roles, fee config
+- [x] 36 new tests
+
+### Phase 8 — Polkadot Substrate Context
+- [x] `ObiPolkadotContext.evmContext` optional field
+- [x] `createPolkadotContext({ includeEvm: true, privateKey })` — auto-creates viem context via Polkadot Hub ETH-RPC
+- [x] Deposit/withdraw tools delegate to EVM path via `polkadotContext.evmContext`
+- [x] 11 new Polkadot EVM delegation tests
+
+### Phase 9 — v0.2.0 Release
+- [x] All 4 `package.json` versions bumped: `0.1.0 → 0.2.0`
+- [x] `CHANGELOG.md` created at repo root
+- [x] `.github/workflows/release.yml` — build → test → publish on `v*.*.*` tag
+- [x] `README.md` roadmap updated to reflect real v0.2.0 content
+- [x] `tasks/` files updated
+
+---
+
+## Verification Results — v0.2.0
 
 | Check | Status |
 |-------|--------|
 | `pnpm build` | ✅ 4 packages built |
-| `pnpm typecheck` | ✅ 9 tasks (6 packages + examples) |
-| `pnpm test` | ✅ 225 tests across 10 test files |
-| `pnpm lint` | ✅ 67 files checked, 0 issues |
+| `pnpm typecheck` | ✅ clean |
+| `pnpm test` | ✅ 364 tests across packages |
+| `pnpm lint` | ✅ 0 issues |
 
 ### Test Breakdown
-- `@obidot-kit/core`: 49 tests (3 files)
-- `@obidot-kit/llm`: 121 tests (4 files)
-- `@obidot-kit/sdk`: 53 tests (2 files)
-- `@obidot-kit/cli`: 2 tests (1 file)
+- `@obidot-kit/core`: ~60 tests
+- `@obidot-kit/llm`: ~195 tests
+- `@obidot-kit/sdk`: ~75 tests
+- `@obidot-kit/cli`: ~34 tests
 
-## Recommended Next Steps
+---
 
-- [ ] Run `pnpm changeset` to create a changeset for release
-- [ ] Implement a real `BifrostStrategyService` using `viem.writeContract`
-- [ ] Provide real `ObiEvmContext` instances for satellite chains
-- [ ] Connect real `ObiPolkadotContext` for hub-side operations
-- [ ] Integrate into `@obidot/agent` module and run typecheck
-- [ ] Add WebSocket support in `createEvmContext` for event subscriptions
-- [ ] Audit and pin peer dependency versions if CI requires zero warnings
+## Deployed Contract Addresses (Polkadot Hub Paseo TestNet — chain 420420417)
+
+| Contract | Address |
+|---|---|
+| `ObidotVault` | `0x03473a95971Ba0496786a615e21b1e87bDFf0025` |
+| `SwapRouter` | `0x0A85A1B0bb893cab3b5fad7312ac241e92C8Badf` |
+| `SwapQuoter` | `0x81d7aCFEF474DA6c76eC1b5A05a137cB9f3A5Db1` |
+| `XCMExecutor` | `0x011b6FAf32370dCF92a452374FfCfCdbfA20278c` |
+| `HyperExecutor` | `0x62919Cb6416Cb919fC4A30c5707a7867Ca874ca6` |
+| `HydrationOmnipoolAdapter` | `0xF0E1c10f97446C032A86C9643258Bb26d6129933` |
+| `BifrostAdapter` | `0x265Cb785De0fF2e5BcebDEb53095aDCAE9175527` |
+| `OracleRegistry` | `0x8b7C7345d6cF9de45f4aacC61F56F0241d47e88B` |
+| `CrossChainRouter` | `0xE2fFfb3B5C72f99811bC20D857035611bFCe5b5d` |
+| `IsmpHost` | `0xbb26e04a71e7c12093e82b83ba310163eac186fa` |
+| ETH-RPC | `https://eth-rpc-testnet.polkadot.io/` |
+
+---
+
+## Next Steps (MVP Phases 3–8)
+
+See root `AGENTS.md` for the full 8-phase MVP plan:
+- **Phase 3** — `obi.index`: fix 4 pubsub bugs, add tests, deploy publicly
+- **Phase 4** — `obidot/app`: wire addresses + indexer, real deposit/swap txs
+- **Phase 5** — `obidot/agent`: EIP-712 intent signing, auto-execution, 24/7 deploy
+- **Phase 6** — `obi.router`: `RelayTeleportAdapter`, `KaruraAdapter`, Moonbeam/Interlay stubs
+- **Phase 7** — `obi.router`: run `SelfRelay.mjs` (pending PAS0 relayer fix)
+- **Phase 8** — All repos: final docs, ABI regen, integration tests

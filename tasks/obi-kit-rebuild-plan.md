@@ -1,8 +1,8 @@
 # obi-kit SDK Rebuild Plan — `packages/*`
 
 > **Repo:** `obidot/obi-kit` (pnpm + Turborepo monorepo)
-> **Status:** v0.1.0 — 225 tests passing, build/lint/typecheck clean. All tools functional in offline mode; EVM mode works for vault deposit/withdraw/oracle/performance. Bifrost strategy, cross-chain rebalance, and CLI are stubs.
-> **Goal:** Ship v0.2.0 with real Bifrost service, real cross-chain ISMP dispatch, ABI sync pipeline, full CLI, WebSocket support, and Polkadot substrate context.
+> **Status:** v0.2.0 — 364 tests passing, build/lint/typecheck clean. All phases 1–9 complete.
+> **Goal:** ✅ DONE — Shipped v0.2.0 with real Bifrost service, real cross-chain ISMP dispatch, ABI sync pipeline, full CLI, WebSocket support, and Polkadot substrate context.
 
 ---
 
@@ -32,6 +32,7 @@
 ## Phase 1 — ABI Sync Pipeline
 
 **Priority:** Critical (drift prevention)
+**Status:** ✅ DONE (committed)
 **Files:** `packages/core/src/abis/`, new `scripts/sync-abis.ts`, root `package.json`
 
 ### 1.1 Problem
@@ -98,6 +99,7 @@ Add a GitHub Actions step that runs `pnpm sync:abis --check` — fails if genera
 ## Phase 2 — Real `BifrostStrategyService`
 
 **Priority:** High
+**Status:** ✅ DONE (committed)
 **Files:** `packages/llm/src/tools/bifrost-strategy.ts`, new `packages/llm/src/services/bifrost-strategy.service.ts`
 
 ### 2.1 Current Stub
@@ -169,6 +171,7 @@ Add to `packages/llm/test/`:
 ## Phase 3 — Real Cross-Chain Service
 
 **Priority:** High
+**Status:** ✅ DONE (committed)
 **Files:** `packages/llm/src/tools/cross-chain-rebalance.ts`, new `packages/llm/src/services/cross-chain.service.ts`
 
 ### 3.1 Current Stub
@@ -251,6 +254,7 @@ Update `obi-kit.ts` — when EVM context + `crossChainRouterAddress` are present
 ## Phase 4 — Real `BifrostYieldTool` Data
 
 **Priority:** High
+**Status:** ✅ DONE (committed)
 **Files:** `packages/llm/src/tools/bifrost-yield.ts`
 
 ### 4.1 Current Implementation
@@ -323,6 +327,7 @@ export interface BifrostYieldToolOptions {
 ## Phase 5 — WebSocket Support
 
 **Priority:** Medium
+**Status:** ✅ DONE (committed)
 **Files:** new `packages/core/src/ws.ts`, update `packages/sdk/src/obi-kit.ts`
 
 ### 5.1 Problem
@@ -403,6 +408,7 @@ Update `packages/core/src/index.ts` to re-export `ObiWsClient` and related types
 ## Phase 6 — CLI Implementation
 
 **Priority:** Medium
+**Status:** ✅ DONE (committed)
 **Files:** `packages/cli/src/cli.ts`, new `packages/cli/src/commands/`
 
 ### 6.1 Current Stubs
@@ -503,6 +509,7 @@ Add to `packages/cli/package.json`:
 ## Phase 7 — Additional Tools
 
 **Priority:** Medium
+**Status:** ✅ DONE (committed)
 **Files:** new tool files in `packages/llm/src/tools/`
 
 ### 7.1 `VaultPolicyTool`
@@ -556,6 +563,7 @@ Update `obi-kit.ts` to include new tools in the tool set when appropriate config
 ## Phase 8 — Polkadot Substrate Context
 
 **Priority:** Medium
+**Status:** ✅ DONE (committed)
 **Files:** `packages/core/src/polkadot.ts`, `packages/llm/src/tools/vault-deposit.ts`, `packages/llm/src/tools/vault-withdraw.ts`
 
 ### 8.1 Current State
@@ -616,6 +624,7 @@ private async executePolkadotDeposit(
 ## Phase 9 — v0.2.0 Release
 
 **Priority:** Low (after all above phases)
+**Status:** ✅ DONE (committed)
 **Files:** All `package.json` files, new `.github/workflows/release.yml`
 
 ### 9.1 Version Bump
