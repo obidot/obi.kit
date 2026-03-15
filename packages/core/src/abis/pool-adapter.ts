@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/IPoolAdapter.sol/IPoolAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-14T16:34:54.807Z
+// Synced: 2026-03-15T03:21:57.628Z
 //
 // IPoolAdapter — universal pool adapter interface (swap, getAmountOut, supportsPair).
 

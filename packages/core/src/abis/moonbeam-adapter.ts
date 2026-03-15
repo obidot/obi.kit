@@ -1,11 +1,11 @@
 // AUTO-GENERATED — do not edit manually.
-// Source: obi.router/out/HydrationOmnipoolAdapter.sol/HydrationOmnipoolAdapter.json
+// Source: obi.router/out/MoonbeamAdapter.sol/MoonbeamAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.627Z
+// Synced: 2026-03-15T03:21:57.631Z
 //
-// HydrationOmnipoolAdapter — Hydration Omnipool XCM adapter (parachain 2034).
+// MoonbeamAdapter — EVM call via XCM Transact on Moonbeam (para 2004, Ethereum pallet 4).
 
-export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
+export const MOONBEAM_ADAPTER_ABI = [
   {
     type: 'constructor',
     inputs: [
@@ -41,7 +41,7 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
-    name: 'HYDRATION_PARA_ID',
+    name: 'MOONBEAM_PARA_ID',
     inputs: [],
     outputs: [
       {
@@ -93,36 +93,17 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
-    name: 'assetIds',
-    inputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'uint32',
-        internalType: 'uint32',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'buildXcmCalldata',
     inputs: [
       {
-        name: 'assetIdIn',
-        type: 'uint32',
-        internalType: 'uint32',
+        name: 'mbTokenIn',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        name: 'assetIdOut',
-        type: 'uint32',
-        internalType: 'uint32',
+        name: 'mbTokenOut',
+        type: 'address',
+        internalType: 'address',
       },
       {
         name: 'amountIn',
@@ -135,9 +116,14 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         internalType: 'uint256',
       },
       {
+        name: 'dexRouter',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
         name: 'beneficiary',
-        type: 'bytes32',
-        internalType: 'bytes32',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     outputs: [
@@ -147,7 +133,7 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         internalType: 'bytes',
       },
     ],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -251,6 +237,25 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
+    name: 'moonbeamTokens',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'renounceRole',
     inputs: [
       {
@@ -287,17 +292,17 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
-    name: 'setAssetId',
+    name: 'setMoonbeamToken',
     inputs: [
       {
-        name: 'token',
+        name: 'hubToken',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'assetId',
-        type: 'uint32',
-        internalType: 'uint32',
+        name: 'moonbeamToken',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     outputs: [],
@@ -321,6 +326,29 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         name: '_supported',
         type: 'bool',
         internalType: 'bool',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setTargetDex',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'dexRouter',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     outputs: [],
@@ -457,6 +485,25 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
+    name: 'targetDex',
+    inputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'withdrawNative',
     inputs: [
       {
@@ -475,26 +522,7 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'event',
-    name: 'AssetIdSet',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'assetId',
-        type: 'uint32',
-        indexed: false,
-        internalType: 'uint32',
-      },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'HydrationSwapDispatched',
+    name: 'MoonbeamSwapDispatched',
     inputs: [
       {
         name: 'swapId',
@@ -525,6 +553,25 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'MoonbeamTokenSet',
+    inputs: [
+      {
+        name: 'hubToken',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'moonbeamToken',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
       },
     ],
     anonymous: false,
@@ -649,6 +696,31 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
     anonymous: false,
   },
   {
+    type: 'event',
+    name: 'TargetDexSet',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'dexRouter',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: 'error',
     name: 'AccessControlBadConfirmation',
     inputs: [],
@@ -671,23 +743,23 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'error',
-    name: 'AssetIdNotSet',
-    inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-  },
-  {
-    type: 'error',
     name: 'InvalidParachainId',
     inputs: [
       {
         name: 'id',
         type: 'uint32',
         internalType: 'uint32',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'MoonbeamTokenNotSet',
+    inputs: [
+      {
+        name: 'hubToken',
+        type: 'address',
+        internalType: 'address',
       },
     ],
   },
@@ -706,6 +778,22 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
     type: 'error',
     name: 'SwapFailed',
     inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'TargetDexNotSet',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
   },
   {
     type: 'error',

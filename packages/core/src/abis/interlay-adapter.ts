@@ -1,21 +1,30 @@
 // AUTO-GENERATED — do not edit manually.
-// Source: obi.router/out/OracleRegistry.sol/OracleRegistry.json
+// Source: obi.router/out/InterlayAdapter.sol/InterlayAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.618Z
+// Synced: 2026-03-15T03:21:57.632Z
 //
-// OracleRegistry — multi-asset price oracle registry with staleness checks.
+// InterlayAdapter — Interlay Loans.mint via XCM Transact (para 2032, Loans pallet 59).
 
-export const ORACLE_REGISTRY_ABI = [
+export const INTERLAY_ADAPTER_ABI = [
   {
     type: 'constructor',
     inputs: [
       {
-        name: 'admin_',
+        name: '_admin',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '_router',
         type: 'address',
         internalType: 'address',
       },
     ],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'receive',
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -32,147 +41,142 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'function',
-    name: 'disableFeed',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'enableFeed',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'feedCount',
+    name: 'INTERLAY_PARA_ID',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'uint32',
+        internalType: 'uint32',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'feeds',
-    inputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: 'oracle',
-        type: 'address',
-        internalType: 'contract IAggregatorV3',
-      },
-      {
-        name: 'heartbeat',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'deviationBps',
-        type: 'uint16',
-        internalType: 'uint16',
-      },
-      {
-        name: 'active',
-        type: 'bool',
-        internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getAllRegisteredAssets',
+    name: 'ROUTER_ROLE',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'address[]',
-        internalType: 'address[]',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'getPrice',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
+    name: 'XCM_PRECOMPILE',
+    inputs: [],
     outputs: [
       {
-        name: 'price',
-        type: 'int256',
-        internalType: 'int256',
-      },
-      {
-        name: 'oracleDecimals',
-        type: 'uint8',
-        internalType: 'uint8',
-      },
-      {
-        name: 'updatedAt',
-        type: 'uint256',
-        internalType: 'uint256',
+        name: '',
+        type: 'address',
+        internalType: 'contract IXcm',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'getPriceStrict',
+    name: 'XCM_PRECOMPILE_ADDR',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'buildXcmCalldata',
     inputs: [
       {
-        name: 'asset',
+        name: 'currencyId',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'beneficiary',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    stateMutability: 'pure',
+  },
+  {
+    type: 'function',
+    name: 'currencyIds',
+    inputs: [
+      {
+        name: '',
         type: 'address',
         internalType: 'address',
       },
     ],
     outputs: [
       {
-        name: 'price',
+        name: '',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'getAmountOut',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'amountIn',
         type: 'uint256',
         internalType: 'uint256',
       },
       {
-        name: 'oracleDecimals',
-        type: 'uint8',
-        internalType: 'uint8',
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
+    ],
+    outputs: [
       {
-        name: 'updatedAt',
+        name: 'amountOut',
         type: 'uint256',
         internalType: 'uint256',
       },
     ],
-    stateMutability: 'view',
+    stateMutability: 'pure',
   },
   {
     type: 'function',
@@ -213,25 +217,6 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'function',
-    name: 'hasFeed',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'bool',
-        internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'hasRole',
     inputs: [
       {
@@ -250,44 +235,6 @@ export const ORACLE_REGISTRY_ABI = [
         name: '',
         type: 'bool',
         internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'isFeedStale',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [
-      {
-        name: 'stale',
-        type: 'bool',
-        internalType: 'bool',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'registeredAssets',
-    inputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
       },
     ],
     stateMutability: 'view',
@@ -330,31 +277,63 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'function',
-    name: 'setFeed',
+    name: 'setCurrencyId',
     inputs: [
       {
-        name: 'asset',
+        name: 'token',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'oracle',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'heartbeat_',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'deviationBps_',
-        type: 'uint16',
-        internalType: 'uint16',
+        name: 'currencyId',
+        type: 'uint32',
+        internalType: 'uint32',
       },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setPairSupported',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '_supported',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'supportedPairs',
+    inputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -377,37 +356,89 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'function',
-    name: 'validateSlippage',
+    name: 'supportsPair',
     inputs: [
       {
-        name: 'asset',
+        name: '',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'amount',
-        type: 'uint256',
-        internalType: 'uint256',
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        name: 'minReturn',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'maxSlippageBps',
-        type: 'uint16',
-        internalType: 'uint16',
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     outputs: [
       {
-        name: 'valid',
+        name: 'supported',
         type: 'bool',
         internalType: 'bool',
       },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'swap',
+    inputs: [
       {
-        name: 'oracleMinimum',
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'amountIn',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'minAmountOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'to',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'data',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: 'amountOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'swapCounter',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
         type: 'uint256',
         internalType: 'uint256',
       },
@@ -415,58 +446,119 @@ export const ORACLE_REGISTRY_ABI = [
     stateMutability: 'view',
   },
   {
-    type: 'event',
-    name: 'FeedDisabled',
+    type: 'function',
+    name: 'withdrawNative',
     inputs: [
       {
-        name: 'asset',
+        name: 'to',
+        type: 'address',
+        internalType: 'address payable',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    name: 'CurrencyIdSet',
+    inputs: [
+      {
+        name: 'token',
         type: 'address',
         indexed: true,
         internalType: 'address',
+      },
+      {
+        name: 'currencyId',
+        type: 'uint32',
+        indexed: false,
+        internalType: 'uint32',
       },
     ],
     anonymous: false,
   },
   {
     type: 'event',
-    name: 'FeedEnabled',
+    name: 'InterlayMintDispatched',
     inputs: [
       {
-        name: 'asset',
-        type: 'address',
+        name: 'opId',
+        type: 'uint256',
         indexed: true,
-        internalType: 'address',
+        internalType: 'uint256',
       },
-    ],
-    anonymous: false,
-  },
-  {
-    type: 'event',
-    name: 'FeedSet',
-    inputs: [
       {
-        name: 'asset',
+        name: 'tokenIn',
         type: 'address',
         indexed: true,
         internalType: 'address',
       },
       {
-        name: 'oracle',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'heartbeat',
+        name: 'amountIn',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
       },
       {
-        name: 'deviationBps',
-        type: 'uint16',
+        name: 'minAmountOut',
+        type: 'uint256',
         indexed: false,
-        internalType: 'uint16',
+        internalType: 'uint256',
+      },
+      {
+        name: 'beneficiary',
+        type: 'bytes32',
+        indexed: false,
+        internalType: 'bytes32',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'NativeReceived',
+    inputs: [
+      {
+        name: 'sender',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'PairUpdated',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'supported',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool',
       },
     ],
     anonymous: false,
@@ -569,10 +661,10 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'error',
-    name: 'FeedInactive',
+    name: 'CurrencyIdNotSet',
     inputs: [
       {
-        name: 'asset',
+        name: 'token',
         type: 'address',
         internalType: 'address',
       },
@@ -580,10 +672,21 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'error',
-    name: 'FeedNotFound',
+    name: 'InvalidParachainId',
     inputs: [
       {
-        name: 'asset',
+        name: 'id',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'SafeERC20FailedOperation',
+    inputs: [
+      {
+        name: 'token',
         type: 'address',
         internalType: 'address',
       },
@@ -591,54 +694,44 @@ export const ORACLE_REGISTRY_ABI = [
   },
   {
     type: 'error',
-    name: 'OracleDataInvalid',
-    inputs: [
-      {
-        name: 'asset',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'answer',
-        type: 'int256',
-        internalType: 'int256',
-      },
-      {
-        name: 'updatedAt',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'SlippageValidationFailed',
-    inputs: [
-      {
-        name: 'minReturn',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'oracleMinimum',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-  },
-  {
-    type: 'error',
-    name: 'ZeroAddress',
+    name: 'SwapFailed',
     inputs: [],
   },
   {
     type: 'error',
-    name: 'ZeroHeartbeat',
+    name: 'UnsupportedPair',
+    inputs: [
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'UnsupportedVersion',
+    inputs: [
+      {
+        name: 'version',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+    ],
+  },
+  {
+    type: 'error',
+    name: 'WithdrawFailed',
     inputs: [],
   },
   {
     type: 'error',
-    name: 'ZeroOracleAddress',
+    name: 'ZeroAmount',
     inputs: [],
   },
 ] as const;

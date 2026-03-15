@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/BifrostAdapter.sol/BifrostAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-14T16:34:54.801Z
+// Synced: 2026-03-15T03:21:57.619Z
 //
 // BifrostAdapter — Bifrost SLP/SALP/DEX/Farming adapter (parachain 2030).
 

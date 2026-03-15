@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/ObidotVaultEVM.sol/ObidotVaultEVM.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-14T16:34:54.804Z
+// Synced: 2026-03-15T03:21:57.622Z
 //
 // ObidotVaultEVM — satellite ERC-4626 vault on EVM chains (Ethereum/Arbitrum/Base).
 

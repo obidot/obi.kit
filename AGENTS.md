@@ -9,7 +9,7 @@ cross-chain operations, and universal intent execution.
 ```
 obi-kit/
 ├── packages/
-│   ├── core/         # Types, chain abstractions, EVM context, ABIs (9 ABI modules)
+│   ├── core/         # Types, chain abstractions, EVM context, ABIs (13 ABI modules)
 │   ├── llm/          # LangChain tool implementations (16 tools)
 │   ├── sdk/          # High-level ObiKit class combining core + llm
 │   └── cli/          # CLI for scaffolding and running agents
@@ -23,6 +23,8 @@ obi-kit/
 ```
 
 **Dependency graph:** `cli → sdk → llm → core`
+
+**Current published version:** `@obidot-kit/core@0.3.0` (includes 13 ABI modules + 9-value PoolType enum)
 
 ## Build, Test & Lint Commands
 
@@ -161,26 +163,30 @@ describe('MyTool', () => {
 
 ### @obidot-kit/core — ABIs
 
-9 ABI modules in `packages/core/src/abis/`:
+13 ABI modules in `packages/core/src/abis/`:
 
-| Module               | Contract                                                        |
-| -------------------- | --------------------------------------------------------------- |
-| `obidot-vault`       | ObidotVault (ERC-4626 + IIntentSolver + SwapRouter integration) |
-| `swap-router`        | SwapRouter (single/multi-hop/split swaps, adapter registry)     |
-| `swap-quoter`        | SwapQuoter (read-only quotes, best route building)              |
-| `pool-adapter`       | IPoolAdapter (swap, getAmountOut, supportsPair)                 |
-| `bifrost-adapter`    | BifrostAdapter (SLP/SALP/DEX/Farming)                           |
-| `cross-chain-router` | CrossChainRouter (ISMP dispatch/receive)                        |
-| `satellite-vault`    | ObidotVaultEVM (EVM satellite)                                  |
-| `vault-cross-chain`  | Vault cross-chain subset ABI                                    |
-| `oracle-registry`    | OracleRegistry (multi-asset oracle)                             |
+| Module                   | Contract                                                        |
+| ------------------------ | --------------------------------------------------------------- |
+| `obidot-vault`           | ObidotVault (ERC-4626 + IIntentSolver + SwapRouter integration) |
+| `swap-router`            | SwapRouter (single/multi-hop/split swaps, adapter registry)     |
+| `swap-quoter`            | SwapQuoter (read-only quotes, best route building)              |
+| `pool-adapter`           | IPoolAdapter (swap, getAmountOut, supportsPair)                 |
+| `bifrost-adapter`        | BifrostAdapter (SLP/SALP/DEX/Farming)                           |
+| `cross-chain-router`     | CrossChainRouter (ISMP dispatch/receive)                        |
+| `satellite-vault`        | ObidotVaultEVM (EVM satellite)                                  |
+| `vault-cross-chain`      | Vault cross-chain subset ABI                                    |
+| `oracle-registry`        | OracleRegistry (multi-asset oracle)                             |
+| `relay-teleport-adapter` | RelayTeleportAdapter (XCM InitiateTeleport → relay chain)       |
+| `karura-adapter`         | KaruraAdapter (Karura DEX XCM Transact, para 2000)              |
+| `moonbeam-adapter`       | MoonbeamAdapter (Moonbeam EVM call via XCM Transact, para 2004) |
+| `interlay-adapter`       | InterlayAdapter (Interlay Loans.mint XCM Transact, para 2032)   |
 
 ### @obidot-kit/core — Types
 
 Key types in `packages/core/src/types.ts`:
 
 - **Vault:** `VaultConfig`, `EvmVaultConfig`, `DepositParams`, `WithdrawParams`, `StrategyIntent`, `StrategyRecord`
-- **DEX Aggregator:** `PoolType` enum (HydrationOmnipool, AssetHubPair, BifrostDEX, Custom), `Route`, `SwapParams`, `SplitLeg`, `Quote`, `SwapRouterConfig`, `POOL_TYPE_LABELS`
+- **DEX Aggregator:** `PoolType` enum (HydrationOmnipool=0, AssetHubPair=1, BifrostDEX=2, Custom=3, Bridge=4, RelayTeleport=5, Karura=6, Moonbeam=7, Interlay=8), `Route`, `SwapParams`, `SplitLeg`, `Quote`, `SwapRouterConfig`, `POOL_TYPE_LABELS`
 - **Universal Intent:** `DestType` enum (Native, Hyper), `IntentAsset`, `Destination`, `UniversalIntent`
 - **Cross-Chain:** `CrossChainMessageType` enum, `SatelliteVaultConfig`, `CrossChainVaultState`, `SatelliteChainState`
 - **Bifrost:** `BifrostStrategyType` enum, `BifrostCurrencyId` enum, `BifrostYieldProduct`, `BifrostProtocolConfig`

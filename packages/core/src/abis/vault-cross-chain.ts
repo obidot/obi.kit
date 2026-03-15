@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/ObidotVault.sol/ObidotVault.json (cross-chain subset)
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-14T16:34:54.809Z
+// Synced: 2026-03-15T03:21:57.635Z
 //
 // VAULT_CROSS_CHAIN_ABI — subset of ObidotVault ABI containing only the
 // cross-chain broadcast/sync functions used by CrossChainRouter and satellites.
