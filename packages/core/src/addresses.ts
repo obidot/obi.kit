@@ -31,7 +31,7 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
 
   // ── DEX Aggregator ───────────────────────────────────────────────────────
   /** SwapRouter v3 — DEX aggregator routing engine */
-  swapRouterAddress: '0x0A85A1B0bb893cab3b5fad7312ac241e92C8Badf',
+  swapRouterAddress: '0x60a72d1e20c5dc40Bb5a24394f0583d863201A3c',
   /** SwapQuoter — read-only quoter (getBestQuote, getAllQuotes, quoteMultiHop) */
   swapQuoterAddress: '0x81d7aCFEF474DA6c76eC1b5A05a137cB9f3A5Db1',
 
