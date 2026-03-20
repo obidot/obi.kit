@@ -31,7 +31,7 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
 
   // ── DEX Aggregator ───────────────────────────────────────────────────────
   /** SwapRouter v3 — DEX aggregator routing engine */
-  swapRouterAddress: '0x0A85A1B0bb893cab3b5fad7312ac241e92C8Badf',
+  swapRouterAddress: '0x60a72d1e20c5dc40Bb5a24394f0583d863201A3c',
   /** SwapQuoter — read-only quoter (getBestQuote, getAllQuotes, quoteMultiHop) */
   swapQuoterAddress: '0x81d7aCFEF474DA6c76eC1b5A05a137cB9f3A5Db1',
 
@@ -60,6 +60,18 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
   ismpHostAddress: '0xbb26e04a71e7c12093e82b83ba310163eac186fa',
   /** Hyperbridge fee token (USD.h) on Polkadot Hub Paseo */
   hyperbridgeFeeTokenAddress: '0x0dc440cf87830f0af564eb8b62b454b7e0c68a4b',
+
+  // ── SP-1 Liquidity Provision (2026-03-20) ──────────────────────────────────
+  /** LiquidityPair tDOT/TKB */
+  lpPairDotTkb:  '0xDc1b4a27d44613aa5072Ca6edC20151D94e7f93A',
+  /** LiquidityPair tDOT/tUSDC */
+  lpPairDotUsdc: '0x9576F7b40bC3a8Bb5d236Cd4bEBC29dC40AF0fa4',
+  /** LiquidityPair tDOT/tETH */
+  lpPairDotEth:  '0x4a0183BA79Ab7072240B5Fd8B6A1055E8e60aC83',
+  /** LiquidityPair tUSDC/tETH */
+  lpPairUsdcEth: '0x3FBa4A4db176201d3A3a5B25e7561274ceCb6ef5',
+  /** LiquidityPair TKB/TKA */
+  lpPairTkbTka:  '0xd6F5C4b7b3911Db7D062D0457f8b3D4045C86d50',
 } as const satisfies Record<string, `0x${string}`>;
 
 /**

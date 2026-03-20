@@ -18,3 +18,4 @@ export { VaultPolicyTool } from './vault-policy.js';
 export { VaultStateTool } from './vault-state.js';
 export { VaultWithdrawTool } from './vault-withdraw.js';
 export { WithdrawalQueueTool } from './withdrawal-queue.js';
+export { LpPoolStateTool } from './lp-pool-state.js';

@@ -15,3 +15,4 @@ export { SATELLITE_VAULT_ABI } from './satellite-vault.js';
 export { SWAP_QUOTER_ABI } from './swap-quoter.js';
 export { SWAP_ROUTER_ABI } from './swap-router.js';
 export { VAULT_CROSS_CHAIN_ABI } from './vault-cross-chain.js';
+export { LIQUIDITY_PAIR_ABI } from './liquidity-pair.js';
