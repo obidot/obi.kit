@@ -20,7 +20,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
-    "prepublishOnly": "turbo run build lint typecheck"
+    "prepublishOnly": "turbo run build lint typecheck",
+    "sync:abis": "tsx scripts/sync-abis.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.3",

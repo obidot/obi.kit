@@ -1,20 +1,18 @@
-import type { Tool } from "@langchain/core/tools";
+import type { Tool } from '@langchain/core/tools';
 import type {
   ChainConfig,
   EvmVaultConfig,
   ObiEvmContext,
   ObiPolkadotContext,
+  ObiWsClientOptions,
   SatelliteVaultConfig,
   SwapRouterConfig,
   ToolResult,
   TransactionSigner,
   VaultConfig,
-} from "@obidot-kit/core";
-import type {
-  BifrostConfig,
-  CrossChainConfig,
-  ObiAgentApiConfig,
-} from "@obidot-kit/llm";
+} from '@obidot-kit/core';
+import { ObiWsClient } from '@obidot-kit/core';
+import type { BifrostConfig, CrossChainConfig, ObiAgentApiConfig } from '@obidot-kit/llm';
 import {
   BatchStrategyTool,
   BifrostStrategyTool,
@@ -25,14 +23,18 @@ import {
   ExecuteLocalSwapTool,
   ObiAgentApi,
   OracleCheckTool,
+  OracleUpdateTool,
   PerformanceTool,
   SwapExecuteTool,
   SwapMultiHopTool,
   SwapQuoteTool,
+  VaultAdminTool,
   VaultDepositTool,
+  VaultPolicyTool,
+  VaultStateTool,
   VaultWithdrawTool,
   WithdrawalQueueTool,
-} from "@obidot-kit/llm";
+} from '@obidot-kit/llm';
 
 /**
  * Configuration options for initializing the ObiKit SDK.
@@ -164,6 +166,7 @@ export class ObiKit {
   private hubEvmContext: ObiEvmContext | undefined;
   private evmVaultConfig: EvmVaultConfig | undefined;
   private swapRouterConfig: SwapRouterConfig | undefined;
+  private wsClient: ObiWsClient | undefined;
 
   constructor(config: ObiKitConfig) {
     this.chainConfig = config.chainConfig;
@@ -255,9 +258,7 @@ export class ObiKit {
    * Returns `true` when the SDK has an EVM context for the hub vault.
    */
   isEvmMode(): boolean {
-    return (
-      this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined
-    );
+    return this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined;
   }
 
   setPolkadotContext(ctx: ObiPolkadotContext): void {
@@ -313,7 +314,7 @@ export class ObiKit {
    * @returns Parsed `ToolResult` with quote data
    */
   async getSwapQuote(input: string): Promise<ToolResult> {
-    return this.invokeTool("swap_quote", input);
+    return this.invokeTool('swap_quote', input);
   }
 
   /**
@@ -325,7 +326,7 @@ export class ObiKit {
    * @returns Parsed `ToolResult` with transaction hash
    */
   async executeSwap(input: string): Promise<ToolResult> {
-    return this.invokeTool("swap_execute", input);
+    return this.invokeTool('swap_execute', input);
   }
 
   /**
@@ -337,7 +338,7 @@ export class ObiKit {
    * @returns Parsed `ToolResult` with transaction hash
    */
   async executeMultiHopSwap(input: string): Promise<ToolResult> {
-    return this.invokeTool("swap_multi_hop", input);
+    return this.invokeTool('swap_multi_hop', input);
   }
 
   /**
@@ -349,7 +350,7 @@ export class ObiKit {
    * @returns Parsed `ToolResult` with transaction hash
    */
   async executeLocalSwap(input: string): Promise<ToolResult> {
-    return this.invokeTool("execute_local_swap", input);
+    return this.invokeTool('execute_local_swap', input);
   }
 
   /**
@@ -361,7 +362,7 @@ export class ObiKit {
    * @returns Parsed `ToolResult` with transaction hash
    */
   async executeUniversalIntent(input: string): Promise<ToolResult> {
-    return this.invokeTool("execute_intent", input);
+    return this.invokeTool('execute_intent', input);
   }
 
   /**
@@ -373,9 +374,7 @@ export class ObiKit {
       return {};
     }
     const result: Record<string, `0x${string}`> = {};
-    for (const [poolType, addr] of Object.entries(
-      this.swapRouterConfig.adapters,
-    )) {
+    for (const [poolType, addr] of Object.entries(this.swapRouterConfig.adapters)) {
       if (addr) {
         result[poolType] = addr;
       }
@@ -525,7 +524,7 @@ export class ObiKit {
       if (tools.length === 0 && this.vaults.size > 0) {
         const opts = this.chainConfig
           ? { chainConfig: this.chainConfig }
-          : { chainConfig: { endpoint: "not-connected" } as ChainConfig };
+          : { chainConfig: { endpoint: 'not-connected' } as ChainConfig };
 
         tools.push(new VaultDepositTool(opts));
         tools.push(new VaultWithdrawTool(opts));
@@ -552,43 +551,33 @@ export class ObiKit {
     if (!tool) {
       return {
         success: false,
-        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(", ")}`,
+        message: `Tool "${toolName}" not found. Available tools: ${tools.map((t) => t.name).join(', ')}`,
       };
     }
 
     const raw = await tool.invoke(input);
     try {
-      return JSON.parse(
-        typeof raw === "string" ? raw : String(raw),
-      ) as ToolResult;
+      return JSON.parse(typeof raw === 'string' ? raw : String(raw)) as ToolResult;
     } catch {
       return {
         success: true,
-        message: typeof raw === "string" ? raw : String(raw),
+        message: typeof raw === 'string' ? raw : String(raw),
       };
     }
   }
 
   inspect(): Record<string, unknown> {
     return {
-      mode: this.polkadotContext
-        ? "on-chain"
-        : this.hubEvmContext
-          ? "evm"
-          : "offline",
+      mode: this.polkadotContext ? 'on-chain' : this.hubEvmContext ? 'evm' : 'offline',
       chainConfig: this.chainConfig,
       hasPolkadotContext: this.polkadotContext !== undefined,
-      signerAddress:
-        this.polkadotContext?.address ?? this.hubEvmContext?.account,
-      hasEvmVault:
-        this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined,
+      signerAddress: this.polkadotContext?.address ?? this.hubEvmContext?.account,
+      hasEvmVault: this.hubEvmContext !== undefined && this.evmVaultConfig !== undefined,
       evmVaultAddress: this.evmVaultConfig?.vaultAddress,
       hasSwapRouter: this.swapRouterConfig !== undefined,
       swapRouterAddress: this.swapRouterConfig?.routerAddress,
       swapQuoterAddress: this.swapRouterConfig?.quoterAddress,
-      poolAdapterCount: this.swapRouterConfig?.adapters
-        ? Object.keys(this.swapRouterConfig.adapters).length
-        : 0,
+      poolAdapterCount: this.swapRouterConfig?.adapters ? Object.keys(this.swapRouterConfig.adapters).length : 0,
       vaultCount: this.vaults.size,
       vaultIds: Array.from(this.vaults.keys()),
       satelliteCount: this.satellites.size,
@@ -599,6 +588,8 @@ export class ObiKit {
       customToolCount: this.customTools.length,
       customToolNames: this.customTools.map((t) => t.name),
       hasLegacySigner: this.signer !== undefined,
+      hasWebSocket: this.wsClient !== undefined,
+      wsConnected: this.wsClient?.connected ?? false,
       totalToolCount: this.getTools().length,
     };
   }
@@ -616,11 +607,10 @@ export class ObiKit {
     const crossChainConfig: CrossChainConfig | undefined =
       satelliteArray.length > 0
         ? {
-            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? "",
-            routerAddress: satelliteArray[0]?.routerAddress ?? "",
+            hubVaultAddress: satelliteArray[0]?.hubVaultAddress ?? '',
+            routerAddress: satelliteArray[0]?.routerAddress ?? '',
             satellites: satelliteArray,
-            evmContexts:
-              this.evmContexts.size > 0 ? this.evmContexts : undefined,
+            evmContexts: this.evmContexts.size > 0 ? this.evmContexts : undefined,
           }
         : undefined;
 
@@ -643,6 +633,9 @@ export class ObiKit {
    * - BatchStrategyTool (batch executeStrategies)
    * - PerformanceTool (read-only performance metrics)
    * - OracleCheckTool (read-only oracle/circuit breaker status)
+   * - OracleUpdateTool (push new price to KeeperOracle, requires KEEPER_ROLE)
+   * - VaultPolicyTool (read-only policy: parachains, protocols, caps)
+   * - VaultAdminTool (read-only admin state: shares, fees, roles)
    * - SwapQuoteTool (read-only swap quotes, requires swapRouterConfig)
    * - SwapExecuteTool (single-hop swap, requires swapRouterConfig)
    * - SwapMultiHopTool (multi-hop swap, requires swapRouterConfig)
@@ -655,6 +648,10 @@ export class ObiKit {
     }
 
     const tools: Tool[] = [
+      new VaultStateTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
       new VaultDepositTool({
         evmContext: this.hubEvmContext,
         vaultConfig: this.evmVaultConfig,
@@ -676,6 +673,17 @@ export class ObiKit {
         vaultConfig: this.evmVaultConfig,
       }),
       new OracleCheckTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new OracleUpdateTool({
+        evmContext: this.hubEvmContext,
+      }),
+      new VaultPolicyTool({
+        evmContext: this.hubEvmContext,
+        vaultConfig: this.evmVaultConfig,
+      }),
+      new VaultAdminTool({
         evmContext: this.hubEvmContext,
         vaultConfig: this.evmVaultConfig,
       }),
@@ -701,6 +709,9 @@ export class ObiKit {
           evmContext: this.hubEvmContext,
           vaultConfig: this.evmVaultConfig,
           routerAddress: this.swapRouterConfig.routerAddress,
+          // Pass quoter for pre-flight slippage protection
+          quoterAddress: this.swapRouterConfig.quoterAddress,
+          slippageBps: 200, // 2% — matches SlippageGuard on-chain ceiling
         }),
         new SwapMultiHopTool({
           evmContext: this.hubEvmContext,
@@ -756,5 +767,48 @@ export class ObiKit {
         satellites: satelliteArray,
       }),
     ];
+  }
+
+  // ── WebSocket ────────────────────────────────────────────────────────
+
+  /**
+   * Opens a WebSocket connection to an Obidot agent event server.
+   *
+   * The returned `ObiWsClient` is also stored internally so that
+   * `disconnectWebSocket()` can close it without requiring the caller
+   * to hold a reference.
+   *
+   * @example
+   * ```ts
+   * kit.connectWebSocket({
+   *   url: 'ws://localhost:3011/ws',
+   *   onEvent: (e) => console.log(e.type, e),
+   * });
+   * ```
+   */
+  connectWebSocket(options: ObiWsClientOptions): ObiWsClient {
+    // Close any existing connection first
+    this.wsClient?.disconnect();
+    this.wsClient = new ObiWsClient(options);
+    this.wsClient.connect();
+    return this.wsClient;
+  }
+
+  /**
+   * Closes the WebSocket connection opened by `connectWebSocket()`.
+   *
+   * Safe to call when no connection is open — it is a no-op in that case.
+   */
+  disconnectWebSocket(): void {
+    this.wsClient?.disconnect();
+    this.wsClient = undefined;
+  }
+
+  /**
+   * Returns the current `ObiWsClient` instance if one has been created
+   * via `connectWebSocket()`, otherwise `undefined`.
+   */
+  getWsClient(): ObiWsClient | undefined {
+    return this.wsClient;
   }
 }

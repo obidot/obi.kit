@@ -27,7 +27,12 @@
 import { type AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
 import type { ChainConfig, EvmVaultConfig, ObiEvmContext, VaultConfig } from '@obidot-kit/core';
-import { createEvmContext, POLKADOT_HUB_TESTNET_RPC, polkadotHubTestnet } from '@obidot-kit/core';
+import {
+  createEvmContext,
+  POLKADOT_HUB_TESTNET_CONTRACTS,
+  POLKADOT_HUB_TESTNET_RPC,
+  polkadotHubTestnet,
+} from '@obidot-kit/core';
 import { ObiKit } from '@obidot-kit/sdk';
 import { Bot } from 'grammy';
 
@@ -36,8 +41,8 @@ import { Bot } from 'grammy';
 const OPENAI_MODEL = process.env['OPENAI_MODEL'] ?? 'gpt-4o-mini';
 
 const HUB_RPC_URL = process.env['HUB_RPC_URL'] ?? POLKADOT_HUB_TESTNET_RPC;
-const VAULT_ADDRESS = process.env['VAULT_ADDRESS'] ?? '0x0000000000000000000000000000000000000001';
-const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? '0x0000000000000000000000000000000000000002';
+const VAULT_ADDRESS = process.env['VAULT_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.vaultAddress;
+const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.assetAddress;
 const PRIVATE_KEY = process.env['PRIVATE_KEY'];
 
 const MAX_ITERATIONS = 5;

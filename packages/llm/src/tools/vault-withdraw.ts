@@ -1,5 +1,12 @@
 import { Tool } from '@langchain/core/tools';
-import type { ChainConfig, EvmVaultConfig, ObiEvmContext, ObiPolkadotContext, ToolResult, VaultAction } from '@obidot-kit/core';
+import type {
+  ChainConfig,
+  EvmVaultConfig,
+  ObiEvmContext,
+  ObiPolkadotContext,
+  ToolResult,
+  VaultAction,
+} from '@obidot-kit/core';
 
 export interface VaultWithdrawInput {
   /** The vault address or identifier to withdraw from */
@@ -156,11 +163,19 @@ export class VaultWithdrawTool extends Tool {
   protected async executeWithdraw(action: VaultAction, receiver?: string, redeemShares?: boolean): Promise<ToolResult> {
     // EVM mode: real on-chain withdraw/redeem via viem
     if (this.evmContext?.walletClient && this.vaultConfig) {
-      return this.executeEvmWithdraw(action, receiver, redeemShares);
+      return this.executeEvmWithdraw(action, receiver, redeemShares, this.evmContext);
     }
 
-    // Polkadot mode
+    // Polkadot mode: if the polkadot context has an embedded EVM context,
+    // delegate to the EVM path (Polkadot Hub uses pallet-revive + ETH-RPC,
+    // not a substrate extrinsic — see polkadot.ts for rationale).
     if (this.polkadotContext) {
+      const embeddedEvm = this.polkadotContext.evmContext;
+      if (embeddedEvm?.walletClient && this.vaultConfig) {
+        return this.executeEvmWithdraw(action, receiver, redeemShares, embeddedEvm);
+      }
+
+      // No EVM context available — return pending stub
       return {
         success: true,
         data: {
@@ -194,9 +209,17 @@ export class VaultWithdrawTool extends Tool {
 
   /**
    * Execute a real ERC-4626 withdraw or redeem via viem.
+   *
+   * @param ctx - The EVM context to use. May be `this.evmContext` (direct EVM
+   *   mode) or `this.polkadotContext.evmContext` (Polkadot mode with embedded
+   *   viem client targeting the Polkadot Hub ETH-RPC).
    */
-  private async executeEvmWithdraw(action: VaultAction, receiver?: string, redeemShares?: boolean): Promise<ToolResult> {
-    const ctx = this.evmContext!;
+  private async executeEvmWithdraw(
+    action: VaultAction,
+    receiver: string | undefined,
+    redeemShares: boolean | undefined,
+    ctx: ObiEvmContext,
+  ): Promise<ToolResult> {
     const wallet = ctx.walletClient!;
     const account = ctx.account!;
     const vaultAddress = action.vaultAddress as `0x${string}`;

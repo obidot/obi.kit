@@ -1,4 +1,4 @@
-import type { ChainConfig, ObiPolkadotContext } from '@obidot-kit/core';
+import type { ChainConfig, ObiEvmContext, ObiPolkadotContext } from '@obidot-kit/core';
 import { describe, expect, it } from 'vitest';
 import { VaultDepositTool } from '../src/tools/vault-deposit.js';
 
@@ -7,6 +7,19 @@ const mockChainConfig: ChainConfig = {
   name: 'Polkadot',
   chainId: 'polkadot',
   ss58Prefix: 0,
+};
+
+/** Minimal read-only EVM context (no walletClient) — simulates polkadot ctx without signer */
+const mockReadOnlyEvmContext: ObiEvmContext = {
+  client: {} as ObiEvmContext['client'],
+  chain: {
+    id: 420420417,
+    name: 'Polkadot Hub TestNet',
+    nativeCurrency: { name: 'DOT', symbol: 'DOT', decimals: 10 },
+    rpcUrls: { default: { http: ['https://eth-rpc-testnet.polkadot.io/'] } },
+  },
+  chainName: 'Polkadot Hub TestNet',
+  // walletClient intentionally omitted to simulate a read-only context
 };
 
 const mockPolkadotContext: ObiPolkadotContext = {
@@ -292,6 +305,90 @@ describe('VaultDepositTool', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.mode).toBe('polkadot');
+      expect(result.data.signerAddress).toBe(mockPolkadotContext.address);
+    });
+  });
+
+  describe('polkadot mode with embedded EVM context', () => {
+    it('should fall back to polkadot stub when evmContext has no walletClient', async () => {
+      // polkadotContext.evmContext is read-only (no walletClient) → stub path
+      const ctxWithReadOnlyEvm: ObiPolkadotContext = {
+        ...mockPolkadotContext,
+        evmContext: mockReadOnlyEvmContext,
+      };
+      const tool = new VaultDepositTool({
+        polkadotContext: ctxWithReadOnlyEvm,
+      });
+
+      const input = JSON.stringify({
+        vaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
+        amount: '1000000000000000000',
+        asset: '0x2402C804aD8a6217BF73D8483dA7564065c56083',
+      });
+
+      const raw = await tool.invoke(input);
+      const result = JSON.parse(raw);
+
+      // Falls through to polkadot stub because walletClient is missing
+      expect(result.success).toBe(true);
+      expect(result.data.mode).toBe('polkadot');
+      expect(result.data.status).toBe('pending');
+    });
+
+    it('should fall back to polkadot stub when evmContext has walletClient but no vaultConfig', async () => {
+      // Even with a walletClient, without vaultConfig the tool cannot proceed to EVM path
+      const ctxWithWalletEvm: ObiPolkadotContext = {
+        ...mockPolkadotContext,
+        evmContext: {
+          ...mockReadOnlyEvmContext,
+          walletClient: {} as ObiEvmContext['walletClient'],
+          account: '0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301',
+        },
+      };
+      // No vaultConfig provided to tool
+      const tool = new VaultDepositTool({ polkadotContext: ctxWithWalletEvm });
+
+      const input = JSON.stringify({
+        vaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
+        amount: '1000000000000000000',
+        asset: '0x2402C804aD8a6217BF73D8483dA7564065c56083',
+      });
+
+      const raw = await tool.invoke(input);
+      const result = JSON.parse(raw);
+
+      expect(result.success).toBe(true);
+      expect(result.data.mode).toBe('polkadot');
+      expect(result.data.status).toBe('pending');
+    });
+
+    it('should expose hasPolkadotContext() true when polkadot ctx has evmContext', () => {
+      const ctxWithEvm: ObiPolkadotContext = {
+        ...mockPolkadotContext,
+        evmContext: mockReadOnlyEvmContext,
+      };
+      const tool = new VaultDepositTool({ polkadotContext: ctxWithEvm });
+      expect(tool.hasPolkadotContext()).toBe(true);
+    });
+
+    it('should still include signerAddress in stub output when evmContext present', async () => {
+      const ctxWithReadOnlyEvm: ObiPolkadotContext = {
+        ...mockPolkadotContext,
+        evmContext: mockReadOnlyEvmContext,
+      };
+      const tool = new VaultDepositTool({
+        polkadotContext: ctxWithReadOnlyEvm,
+      });
+
+      const input = JSON.stringify({
+        vaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
+        amount: '500000000',
+        asset: '0x2402C804aD8a6217BF73D8483dA7564065c56083',
+      });
+
+      const raw = await tool.invoke(input);
+      const result = JSON.parse(raw);
+
       expect(result.data.signerAddress).toBe(mockPolkadotContext.address);
     });
   });

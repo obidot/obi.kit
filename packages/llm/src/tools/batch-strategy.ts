@@ -120,7 +120,17 @@ export class BatchStrategyTool extends Tool {
     }
 
     const obj = item as Record<string, unknown>;
-    const requiredStrings = ['asset', 'amount', 'minReturn', 'maxSlippageBps', 'deadline', 'nonce', 'xcmCall', 'targetProtocol', 'signature'] as const;
+    const requiredStrings = [
+      'asset',
+      'amount',
+      'minReturn',
+      'maxSlippageBps',
+      'deadline',
+      'nonce',
+      'xcmCall',
+      'targetProtocol',
+      'signature',
+    ] as const;
 
     for (const field of requiredStrings) {
       if (typeof obj[field] !== 'string' || (obj[field] as string).length === 0) {

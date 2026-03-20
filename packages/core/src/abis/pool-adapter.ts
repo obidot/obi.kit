@@ -1,62 +1,152 @@
-/**
- * ABI for the IPoolAdapter universal DEX pool adapter interface.
- *
- * Adapters implement this interface to provide a uniform swap API across
- * different DEX pool types (HydrationOmnipool, AssetHubPair, BifrostDEX,
- * Custom). The SwapRouter dispatches to these adapters.
- *
- * @see IPoolAdapter.sol in obi.router
- */
+// AUTO-GENERATED — do not edit manually.
+// Source: obi.router/out/IPoolAdapter.sol/IPoolAdapter.json
+// Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
+// Synced: 2026-03-15T03:21:57.628Z
+//
+// IPoolAdapter — universal pool adapter interface (swap, getAmountOut, supportsPair).
+
 export const POOL_ADAPTER_ABI = [
-  // ── Core Functions ──────────────────────────────────────────────────────
   {
-    type: "function",
-    name: "swap",
+    type: 'function',
+    name: 'getAmountOut',
     inputs: [
-      { name: "pool", type: "address" },
-      { name: "tokenIn", type: "address" },
-      { name: "tokenOut", type: "address" },
-      { name: "amountIn", type: "uint256" },
-      { name: "minAmountOut", type: "uint256" },
-      { name: "to", type: "address" },
-      { name: "data", type: "bytes" },
+      {
+        name: 'pool',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'amountIn',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'data',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    outputs: [{ name: "amountOut", type: "uint256" }],
-    stateMutability: "nonpayable",
+    outputs: [
+      {
+        name: 'amountOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
-    type: "function",
-    name: "getAmountOut",
+    type: 'function',
+    name: 'supportsPair',
     inputs: [
-      { name: "pool", type: "address" },
-      { name: "tokenIn", type: "address" },
-      { name: "tokenOut", type: "address" },
-      { name: "amountIn", type: "uint256" },
-      { name: "data", type: "bytes" },
+      {
+        name: 'pool',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
-    outputs: [{ name: "amountOut", type: "uint256" }],
-    stateMutability: "view",
+    outputs: [
+      {
+        name: 'supported',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
-    type: "function",
-    name: "supportsPair",
+    type: 'function',
+    name: 'swap',
     inputs: [
-      { name: "pool", type: "address" },
-      { name: "tokenIn", type: "address" },
-      { name: "tokenOut", type: "address" },
+      {
+        name: 'pool',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'amountIn',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'minAmountOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'to',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'data',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
     ],
-    outputs: [{ name: "supported", type: "bool" }],
-    stateMutability: "view",
+    outputs: [
+      {
+        name: 'amountOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
   },
-  // ── Errors ──────────────────────────────────────────────────────────────
-  { type: "error", name: "SwapFailed", inputs: [] },
   {
-    type: "error",
-    name: "UnsupportedPair",
+    type: 'error',
+    name: 'SwapFailed',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'UnsupportedPair',
     inputs: [
-      { name: "tokenIn", type: "address" },
-      { name: "tokenOut", type: "address" },
+      {
+        name: 'tokenIn',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenOut',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
   },
-  { type: "error", name: "ZeroAmount", inputs: [] },
+  {
+    type: 'error',
+    name: 'ZeroAmount',
+    inputs: [],
+  },
 ] as const;

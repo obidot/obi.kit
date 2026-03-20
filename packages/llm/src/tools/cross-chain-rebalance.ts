@@ -1,5 +1,6 @@
 import { Tool } from '@langchain/core/tools';
 import type { ChainConfig, ObiPolkadotContext, SatelliteVaultConfig, ToolResult } from '@obidot-kit/core';
+import type { EvmCrossChainService } from '../services/evm-cross-chain-service.js';
 
 /**
  * Parsed input for the cross-chain rebalance tool.
@@ -51,6 +52,20 @@ export interface CrossChainRebalanceToolOptions {
    * JSON-RPC URL for the hub chain (EVM side).
    */
   hubRpcUrl?: string;
+
+  /**
+   * Optional real EVM-backed service for reading CrossChainRouter state
+   * and dispatching `broadcastAssetSync`.
+   *
+   * When provided, the tool reads live router state (pending deposits/withdrawals,
+   * outgoing nonce, relayer fee, satellite count) and surfaces it in every result.
+   *
+   * Note: Hub→Satellite and Satellite→Hub asset flows are vault-mediated
+   * via `vault.executeIntent(DestType.Hyper)` — an agent EOA cannot trigger
+   * them directly via the router. The service provides the state context
+   * an agent needs to decide when and what to broadcast.
+   */
+  evmCrossChainService?: EvmCrossChainService;
 }
 
 /**
@@ -100,6 +115,7 @@ export class CrossChainRebalanceTool extends Tool {
   private readonly routerAddress: string | undefined;
   private readonly satellites: ReadonlyArray<SatelliteVaultConfig>;
   private readonly hubRpcUrl: string | undefined;
+  private readonly evmCrossChainService: EvmCrossChainService | undefined;
 
   constructor(options: CrossChainRebalanceToolOptions) {
     super();
@@ -109,6 +125,7 @@ export class CrossChainRebalanceTool extends Tool {
     this.routerAddress = options.routerAddress;
     this.satellites = options.satellites ?? [];
     this.hubRpcUrl = options.hubRpcUrl;
+    this.evmCrossChainService = options.evmCrossChainService;
   }
 
   /**
@@ -127,6 +144,13 @@ export class CrossChainRebalanceTool extends Tool {
    */
   hasPolkadotContext(): boolean {
     return this.polkadotContext !== undefined;
+  }
+
+  /**
+   * Returns `true` when the tool has a live EVM cross-chain service available.
+   */
+  hasEvmCrossChainService(): boolean {
+    return this.evmCrossChainService !== undefined;
   }
 
   /**
@@ -249,13 +273,35 @@ export class CrossChainRebalanceTool extends Tool {
 
   /**
    * Execute a hub → satellite cross-chain deposit.
+   *
+   * Hub→Satellite asset movement is vault-mediated: the agent must call
+   * `vault.executeIntent(DestType.Hyper)` — not the router directly.
+   * When an `evmCrossChainService` is configured, this method reads live
+   * router state to provide context for the agent's decision.
    */
   private async executeHubToSatellite(
     input: CrossChainRebalanceInput,
     config: ChainConfig,
     satellite: SatelliteVaultConfig | undefined,
   ): Promise<ToolResult> {
-    // Stub / offline fallback
+    // Fetch live router state when EVM service is available
+    let routerState: Record<string, unknown> | undefined;
+    if (this.evmCrossChainService) {
+      try {
+        const state = await this.evmCrossChainService.readRouterState();
+        routerState = {
+          paused: state.paused,
+          outgoingNonce: state.outgoingNonce.toString(),
+          pendingSatelliteDeposits: state.pendingSatelliteDeposits.toString(),
+          pendingWithdrawalRequests: state.pendingWithdrawalRequests.toString(),
+          satelliteChainCount: state.satelliteChainCount.toString(),
+          relayerFee: state.relayerFee.toString(),
+        };
+      } catch {
+        // Non-fatal — still return result with stub router state
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -270,8 +316,10 @@ export class CrossChainRebalanceTool extends Tool {
         chainId: config.chainId,
         endpoint: config.endpoint,
         signerAddress: this.polkadotContext?.address,
-        mode: this.polkadotContext ? 'on-chain' : 'offline',
+        mode: routerState ? 'evm-live' : this.polkadotContext ? 'on-chain' : 'offline',
         status: 'pending',
+        routerState: routerState ?? null,
+        note: 'Hub→Satellite deposits are vault-mediated. Call vault.executeIntent(DestType.Hyper) to initiate cross-chain transfer.',
         message: `Cross-chain deposit of ${input.amount} from hub to satellite "${input.satelliteChainName}" prepared via ISMP`,
       },
     };
@@ -279,13 +327,35 @@ export class CrossChainRebalanceTool extends Tool {
 
   /**
    * Execute a satellite → hub cross-chain withdrawal.
+   *
+   * Satellite→Hub withdrawals are initiated on the satellite side and arrive
+   * at the router via ISMP `onAccept()`. When an `evmCrossChainService` is
+   * configured, this method reads live router state (including pending
+   * withdrawal requests) to help the agent assess queue depth.
    */
   private async executeSatelliteToHub(
     input: CrossChainRebalanceInput,
     config: ChainConfig,
     satellite: SatelliteVaultConfig | undefined,
   ): Promise<ToolResult> {
-    // Stub / offline fallback
+    // Fetch live router state when EVM service is available
+    let routerState: Record<string, unknown> | undefined;
+    if (this.evmCrossChainService) {
+      try {
+        const state = await this.evmCrossChainService.readRouterState();
+        routerState = {
+          paused: state.paused,
+          outgoingNonce: state.outgoingNonce.toString(),
+          pendingSatelliteDeposits: state.pendingSatelliteDeposits.toString(),
+          pendingWithdrawalRequests: state.pendingWithdrawalRequests.toString(),
+          satelliteChainCount: state.satelliteChainCount.toString(),
+          relayerFee: state.relayerFee.toString(),
+        };
+      } catch {
+        // Non-fatal — still return result with stub router state
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -301,8 +371,10 @@ export class CrossChainRebalanceTool extends Tool {
         chainId: config.chainId,
         endpoint: config.endpoint,
         signerAddress: this.polkadotContext?.address,
-        mode: this.polkadotContext ? 'on-chain' : 'offline',
+        mode: routerState ? 'evm-live' : this.polkadotContext ? 'on-chain' : 'offline',
         status: 'pending',
+        routerState: routerState ?? null,
+        note: 'Satellite→Hub withdrawals are initiated on the satellite side via ISMP and processed by the router onAccept().',
         message: `Cross-chain withdraw of ${input.amount} from satellite "${input.satelliteChainName}" to hub prepared via ISMP. Receiver: ${input.receiver}`,
       },
     };

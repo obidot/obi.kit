@@ -29,9 +29,10 @@
 import {
   type ChainConfig,
   type EvmVaultConfig,
-  type SatelliteVaultConfig,
-  polkadotHubTestnet,
+  POLKADOT_HUB_TESTNET_CONTRACTS,
   POLKADOT_HUB_TESTNET_RPC,
+  polkadotHubTestnet,
+  type SatelliteVaultConfig,
 } from '@obidot-kit/core';
 import {
   BatchStrategyTool,
@@ -50,10 +51,10 @@ import { ObiKit } from '@obidot-kit/sdk';
 // ---------------------------------------------------------------------------
 
 const HUB_RPC_URL = process.env['HUB_RPC_URL'] ?? POLKADOT_HUB_TESTNET_RPC;
-const HUB_VAULT_ADDRESS = process.env['HUB_VAULT_ADDRESS'] ?? '0x0000000000000000000000000000000000000001';
-const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? '0x0000000000000000000000000000000000000002';
-const ROUTER_ADDRESS = process.env['ROUTER_ADDRESS'] ?? '0x0000000000000000000000000000000000000003';
-const ADAPTER_ADDRESS = process.env['ADAPTER_ADDRESS'] ?? '0x0000000000000000000000000000000000000004';
+const HUB_VAULT_ADDRESS = process.env['HUB_VAULT_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.vaultAddress;
+const ASSET_ADDRESS = process.env['ASSET_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.assetAddress;
+const ROUTER_ADDRESS = process.env['ROUTER_ADDRESS'] ?? POLKADOT_HUB_TESTNET_CONTRACTS.crossChainRouterAddress;
+const ADAPTER_ADDRESS = process.env['ADAPTER_ADDRESS'] ?? '0x0000000000000000000000000000000000000000';
 
 const MOONBEAM_RPC_URL = process.env['MOONBEAM_RPC_URL'] ?? 'https://rpc.api.moonbeam.network';
 const MOONBEAM_VAULT_ADDR = process.env['MOONBEAM_VAULT_ADDR'] ?? '0x0000000000000000000000000000000000000010';
@@ -195,9 +196,7 @@ async function main(): Promise<void> {
     console.log(`   Global total     : ${state.data.globalTotalAssets}`);
     if (state.data.satellites) {
       for (const sat of state.data.satellites) {
-        console.log(
-          `     - ${sat.chainName}: assets=${sat.totalAssets}, emergency=${sat.emergencyMode}`,
-        );
+        console.log(`     - ${sat.chainName}: assets=${sat.totalAssets}, emergency=${sat.emergencyMode}`);
       }
     }
   } else {
@@ -248,7 +247,8 @@ async function main(): Promise<void> {
         xcmCall: '0x00',
         targetParachain: 2006,
         targetProtocol: '0x0000000000000000000000000000000000001234',
-        signature: '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+        signature:
+          '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
       },
     ],
   });
