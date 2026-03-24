@@ -123,19 +123,22 @@ export async function runAgent(options: RunOptions = {}): Promise<void> {
 
   // 4. Dynamically import ObiKit (avoids top-level SDK bundle cost for simple CLI use)
   const { ObiKit } = await import('@obidot-kit/sdk');
+  const chainConfig = {
+    chainId: String(chainId),
+    endpoint,
+    name: 'polkadot-hub',
+  };
 
   const kit = new ObiKit({
-    chainConfig: {
-      chainId,
-      endpoint,
-      name: 'polkadot-hub',
-    },
+    chainConfig,
     vaults: vaultAddress
       ? [
           {
+            id: 'obidot-vault',
             address: vaultAddress as `0x${string}`,
             name: 'ObidotVault',
-            chainId,
+            chain: chainConfig,
+            asset: 'DOT',
           },
         ]
       : [],
@@ -143,9 +146,9 @@ export async function runAgent(options: RunOptions = {}): Promise<void> {
 
   const info = kit.inspect();
   log('[run] ObiKit initialized');
-  log(`[run]   Mode:      ${info.mode}`);
-  log(`[run]   Vaults:    ${info.vaultCount}`);
-  log(`[run]   Tools:     ${info.toolCount}`);
+  log(`[run]   Mode:      ${String(info['mode'])}`);
+  log(`[run]   Vaults:    ${String(info['vaultCount'])}`);
+  log(`[run]   Tools:     ${String(info['totalToolCount'])}`);
   log('');
   log('[run] Agent ready. Interactive REPL coming in v0.2.0.');
   log('[run] Use ObiKit directly in your own script for full agent control.');

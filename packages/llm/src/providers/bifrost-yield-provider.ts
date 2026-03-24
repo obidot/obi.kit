@@ -215,8 +215,9 @@ export function createBifrostYieldProvider(options: BifrostYieldProviderOptions 
       const liveVdotApy = await fetchVdotRateFromRpc(rpcUrl, timeoutMs);
       if (liveVdotApy !== null) {
         const vdotIndex = products.findIndex((p) => p.product === 'vDOT Liquid Staking');
-        if (vdotIndex >= 0) {
-          products[vdotIndex] = { ...products[vdotIndex]!, apy: liveVdotApy };
+        const vdotProduct = vdotIndex >= 0 ? products[vdotIndex] : undefined;
+        if (vdotProduct) {
+          products[vdotIndex] = { ...vdotProduct, apy: liveVdotApy };
         }
       }
 

@@ -158,6 +158,11 @@ export class SwapMultiHopTool extends Tool {
     if (!routerAddress) {
       throw new Error('No SwapRouter address configured');
     }
+    const firstRoute = input.routes[0];
+    const lastRoute = input.routes[input.routes.length - 1];
+    if (!firstRoute || !lastRoute) {
+      throw new Error('Missing multi-hop route data');
+    }
 
     const ctx = this.evmContext;
     if (!ctx?.walletClient) {
@@ -166,8 +171,8 @@ export class SwapMultiHopTool extends Tool {
         data: {
           routerAddress,
           hops: input.routes.length,
-          tokenIn: input.routes[0]!.tokenIn,
-          tokenOut: input.routes[input.routes.length - 1]!.tokenOut,
+          tokenIn: firstRoute.tokenIn,
+          tokenOut: lastRoute.tokenOut,
           amountIn: input.amountIn,
           minAmountOut: input.minAmountOut,
           mode: 'stub',
@@ -179,8 +184,11 @@ export class SwapMultiHopTool extends Tool {
 
     const { SWAP_ROUTER_ABI } = await import('@obidot-kit/core');
 
-    const account = ctx.account!;
-    const firstTokenIn = input.routes[0]!.tokenIn as `0x${string}`;
+    const account = ctx.account;
+    if (!account) {
+      throw new Error('Signer account required for multi-hop swap execution');
+    }
+    const firstTokenIn = firstRoute.tokenIn as `0x${string}`;
     const amountIn = BigInt(input.amountIn);
     const toAddress = (input.to ?? account) as `0x${string}`;
     const deadline = input.deadline ? BigInt(input.deadline) : BigInt(Math.floor(Date.now() / 1000) + 300);
@@ -251,14 +259,13 @@ export class SwapMultiHopTool extends Tool {
 
     const receipt = await ctx.client.waitForTransactionReceipt({ hash });
 
-    const lastRoute = input.routes[input.routes.length - 1]!;
     return {
       success: true,
       data: {
         action: 'swapMultiHop',
         routerAddress,
         hops: input.routes.length,
-        tokenIn: input.routes[0]!.tokenIn,
+        tokenIn: firstRoute.tokenIn,
         tokenOut: lastRoute.tokenOut,
         amountIn: input.amountIn,
         minAmountOut: input.minAmountOut,
@@ -267,7 +274,7 @@ export class SwapMultiHopTool extends Tool {
         mode: 'evm',
         status: receipt.status === 'success' ? 'confirmed' : 'failed',
         blockNumber: Number(receipt.blockNumber),
-        message: `Multi-hop swap (${input.routes.length} hops) executed: ${input.routes[0]!.tokenIn} → ${lastRoute.tokenOut}.`,
+        message: `Multi-hop swap (${input.routes.length} hops) executed: ${firstRoute.tokenIn} → ${lastRoute.tokenOut}.`,
       },
       txHash: hash,
       blockNumber: Number(receipt.blockNumber),

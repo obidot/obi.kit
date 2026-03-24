@@ -119,6 +119,7 @@ async function main(): Promise<void> {
   console.log('[3] Creating vault tools...');
 
   let bifrostStrategyTool: BifrostStrategyTool;
+  let hubEvmContext: ReturnType<typeof kit.getHubEvmContext>;
 
   if (isEvmMode) {
     // Import viem accounts dynamically to avoid requiring it when offline
@@ -134,6 +135,10 @@ async function main(): Promise<void> {
 
     // Set up ObiKit with EVM vault
     kit.setEvmVault(evmContext, evmVaultConfig);
+    hubEvmContext = kit.getHubEvmContext();
+    if (!hubEvmContext) {
+      throw new Error('ObiKit failed to retain the configured EVM context');
+    }
     console.log(`   Signer : ${account.address}`);
     console.log(`   EVM vault tools created (${kit.getTools().length} total)`);
 
@@ -151,21 +156,14 @@ async function main(): Promise<void> {
   }
 
   // Create individual tools for demonstration
-  const toolOptions = isEvmMode
-    ? { evmContext: kit.getHubEvmContext()!, vaultConfig: evmVaultConfig }
-    : { chainConfig };
+  const evmToolOptions = hubEvmContext ? { evmContext: hubEvmContext, vaultConfig: evmVaultConfig } : undefined;
+  const toolOptions = evmToolOptions ?? { chainConfig };
 
   const depositTool = new VaultDepositTool(toolOptions);
   const withdrawTool = new VaultWithdrawTool(toolOptions);
-  const queueTool = new WithdrawalQueueTool(
-    isEvmMode ? { evmContext: kit.getHubEvmContext()!, vaultConfig: evmVaultConfig } : {},
-  );
-  const performanceTool = new PerformanceTool(
-    isEvmMode ? { evmContext: kit.getHubEvmContext()!, vaultConfig: evmVaultConfig } : {},
-  );
-  const oracleTool = new OracleCheckTool(
-    isEvmMode ? { evmContext: kit.getHubEvmContext()!, vaultConfig: evmVaultConfig } : {},
-  );
+  const queueTool = new WithdrawalQueueTool(evmToolOptions ?? {});
+  const performanceTool = new PerformanceTool(evmToolOptions ?? {});
+  const oracleTool = new OracleCheckTool(evmToolOptions ?? {});
 
   // Bifrost yield tool — uses live RPC provider (falls back to static rates)
   const bifrostYieldTool = new BifrostYieldTool({

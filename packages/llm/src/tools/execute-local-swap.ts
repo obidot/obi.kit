@@ -187,7 +187,10 @@ export class ExecuteLocalSwapTool extends Tool {
 
     const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
-    const account = ctx.account!;
+    const account = ctx.account;
+    if (!account) {
+      throw new Error('Signer account required for local swap execution');
+    }
     const swapDeadline = input.swapDeadline ? BigInt(input.swapDeadline) : BigInt(Math.floor(Date.now() / 1000) + 300);
 
     // Build SwapParams struct

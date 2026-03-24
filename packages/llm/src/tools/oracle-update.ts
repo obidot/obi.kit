@@ -149,7 +149,8 @@ export class OracleUpdateTool extends Tool {
     }
 
     const walletClient = ctx.walletClient;
-    if (!walletClient) {
+    const account = ctx.account;
+    if (!walletClient || !account) {
       throw new Error('Wallet client required for oracle price updates (KEEPER_ROLE)');
     }
 
@@ -163,7 +164,7 @@ export class OracleUpdateTool extends Tool {
       functionName: 'setPrice',
       args: [price],
       chain: ctx.chain,
-      account: ctx.account! as `0x${string}`,
+      account: account as `0x${string}`,
     });
 
     const receipt = await ctx.client.waitForTransactionReceipt({

@@ -63,15 +63,15 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
 
   // ── SP-1 Liquidity Provision (2026-03-20) ──────────────────────────────────
   /** LiquidityPair tDOT/TKB */
-  lpPairDotTkb:  '0xDc1b4a27d44613aa5072Ca6edC20151D94e7f93A',
+  lpPairDotTkb: '0xDc1b4a27d44613aa5072Ca6edC20151D94e7f93A',
   /** LiquidityPair tDOT/tUSDC */
   lpPairDotUsdc: '0x9576F7b40bC3a8Bb5d236Cd4bEBC29dC40AF0fa4',
   /** LiquidityPair tDOT/tETH */
-  lpPairDotEth:  '0x4a0183BA79Ab7072240B5Fd8B6A1055E8e60aC83',
+  lpPairDotEth: '0x4a0183BA79Ab7072240B5Fd8B6A1055E8e60aC83',
   /** LiquidityPair tUSDC/tETH */
   lpPairUsdcEth: '0x3FBa4A4db176201d3A3a5B25e7561274ceCb6ef5',
   /** LiquidityPair TKB/TKA */
-  lpPairTkbTka:  '0xd6F5C4b7b3911Db7D062D0457f8b3D4045C86d50',
+  lpPairTkbTka: '0xd6F5C4b7b3911Db7D062D0457f8b3D4045C86d50',
 } as const satisfies Record<string, `0x${string}`>;
 
 /**

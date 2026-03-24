@@ -220,8 +220,11 @@ export class VaultWithdrawTool extends Tool {
     redeemShares: boolean | undefined,
     ctx: ObiEvmContext,
   ): Promise<ToolResult> {
-    const wallet = ctx.walletClient!;
-    const account = ctx.account!;
+    const wallet = ctx.walletClient;
+    const account = ctx.account;
+    if (!wallet || !account) {
+      throw new Error('Wallet client and account are required for EVM withdrawals');
+    }
     const vaultAddress = action.vaultAddress as `0x${string}`;
     const amount = BigInt(action.amount);
     const receiverAddress = (receiver ?? account) as `0x${string}`;

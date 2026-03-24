@@ -230,8 +230,11 @@ export class VaultDepositTool extends Tool {
     receiver: string | undefined,
     ctx: ObiEvmContext,
   ): Promise<ToolResult> {
-    const wallet = ctx.walletClient!;
-    const account = ctx.account!;
+    const wallet = ctx.walletClient;
+    const account = ctx.account;
+    if (!wallet || !account) {
+      throw new Error('Wallet client and account are required for EVM deposits');
+    }
     const vaultAddress = action.vaultAddress as `0x${string}`;
     const assetAddress = action.asset as `0x${string}`;
     const amount = BigInt(action.amount);

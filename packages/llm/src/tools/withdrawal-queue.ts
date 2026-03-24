@@ -107,9 +107,13 @@ export class WithdrawalQueueTool extends Tool {
     if (!vaultAddress) {
       throw new Error('No vault configured');
     }
+    const requestId = input.requestId;
 
     if (input.action === 'status') {
-      return this.getRequestStatus(vaultAddress, input.requestId!, OBIDOT_VAULT_ABI);
+      if (!requestId) {
+        throw new Error('Missing "requestId" field for status action');
+      }
+      return this.getRequestStatus(vaultAddress, requestId, OBIDOT_VAULT_ABI);
     }
 
     // Write operations require wallet client
@@ -131,11 +135,20 @@ export class WithdrawalQueueTool extends Tool {
 
     switch (input.action) {
       case 'request':
-        return this.requestWithdrawal(vaultAddress, input.shares!, OBIDOT_VAULT_ABI);
+        if (!input.shares) {
+          throw new Error('Missing "shares" field for request action');
+        }
+        return this.requestWithdrawal(vaultAddress, input.shares, OBIDOT_VAULT_ABI);
       case 'fulfill':
-        return this.fulfillWithdrawal(vaultAddress, input.requestId!, OBIDOT_VAULT_ABI);
+        if (!requestId) {
+          throw new Error('Missing "requestId" field for fulfill action');
+        }
+        return this.fulfillWithdrawal(vaultAddress, requestId, OBIDOT_VAULT_ABI);
       case 'cancel':
-        return this.cancelWithdrawal(vaultAddress, input.requestId!, OBIDOT_VAULT_ABI);
+        if (!requestId) {
+          throw new Error('Missing "requestId" field for cancel action');
+        }
+        return this.cancelWithdrawal(vaultAddress, requestId, OBIDOT_VAULT_ABI);
     }
   }
 
@@ -189,8 +202,12 @@ export class WithdrawalQueueTool extends Tool {
     shares: string,
     abi: readonly unknown[],
   ): Promise<ToolResult> {
-    const ctx = this.evmContext!;
-    const wallet = ctx.walletClient!;
+    const ctx = this.evmContext;
+    const wallet = ctx?.walletClient;
+    const account = ctx?.account;
+    if (!ctx || !wallet || !account) {
+      throw new Error('Wallet client and account are required for withdrawal requests');
+    }
     const sharesBigInt = BigInt(shares);
 
     const hash = await wallet.writeContract({
@@ -199,7 +216,7 @@ export class WithdrawalQueueTool extends Tool {
       functionName: 'requestWithdrawal',
       args: [sharesBigInt],
       chain: ctx.chain,
-      account: ctx.account as `0x${string}`,
+      account: account as `0x${string}`,
     });
 
     const receipt = await ctx.client.waitForTransactionReceipt({ hash });
@@ -225,8 +242,12 @@ export class WithdrawalQueueTool extends Tool {
     requestId: string,
     abi: readonly unknown[],
   ): Promise<ToolResult> {
-    const ctx = this.evmContext!;
-    const wallet = ctx.walletClient!;
+    const ctx = this.evmContext;
+    const wallet = ctx?.walletClient;
+    const account = ctx?.account;
+    if (!ctx || !wallet || !account) {
+      throw new Error('Wallet client and account are required to fulfill withdrawals');
+    }
 
     const hash = await wallet.writeContract({
       address: vaultAddress,
@@ -234,7 +255,7 @@ export class WithdrawalQueueTool extends Tool {
       functionName: 'fulfillWithdrawal',
       args: [BigInt(requestId)],
       chain: ctx.chain,
-      account: ctx.account as `0x${string}`,
+      account: account as `0x${string}`,
     });
 
     const receipt = await ctx.client.waitForTransactionReceipt({ hash });
@@ -260,8 +281,12 @@ export class WithdrawalQueueTool extends Tool {
     requestId: string,
     abi: readonly unknown[],
   ): Promise<ToolResult> {
-    const ctx = this.evmContext!;
-    const wallet = ctx.walletClient!;
+    const ctx = this.evmContext;
+    const wallet = ctx?.walletClient;
+    const account = ctx?.account;
+    if (!ctx || !wallet || !account) {
+      throw new Error('Wallet client and account are required to cancel withdrawals');
+    }
 
     const hash = await wallet.writeContract({
       address: vaultAddress,
@@ -269,7 +294,7 @@ export class WithdrawalQueueTool extends Tool {
       functionName: 'cancelWithdrawal',
       args: [BigInt(requestId)],
       chain: ctx.chain,
-      account: ctx.account as `0x${string}`,
+      account: account as `0x${string}`,
     });
 
     const receipt = await ctx.client.waitForTransactionReceipt({ hash });

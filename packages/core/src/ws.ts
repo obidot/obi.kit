@@ -178,10 +178,11 @@ export class ObiWsClient {
    * @throws {Error} When the socket is not connected.
    */
   send(data: unknown): void {
-    if (!this.connected) {
+    const socket = this.ws;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
       throw new Error('ObiWsClient: cannot send — socket is not connected');
     }
-    this.ws!.send(JSON.stringify(data));
+    socket.send(JSON.stringify(data));
   }
 
   // ── Internal helpers ──────────────────────────────────────────────────

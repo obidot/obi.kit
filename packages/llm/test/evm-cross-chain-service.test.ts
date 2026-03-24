@@ -156,7 +156,7 @@ describe('EvmCrossChainService', () => {
       expect(result.globalTotalShares).toBe(4800n);
       expect(result.totalRemoteAssets).toBe(200n);
 
-      expect(ctx.walletClient!.writeContract).toHaveBeenCalledWith(
+      expect(ctx.walletClient?.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: ROUTER_ADDRESS,
           functionName: 'broadcastAssetSync',

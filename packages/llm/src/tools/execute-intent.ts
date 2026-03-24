@@ -167,7 +167,10 @@ export class ExecuteIntentTool extends Tool {
 
     const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
-    const account = ctx.account!;
+    const account = ctx.account;
+    if (!account) {
+      throw new Error('Signer account required for universal intent execution');
+    }
 
     // Build UniversalIntent struct
     const intent = {

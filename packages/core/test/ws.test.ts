@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ObiWsClient, type ObiWsClientOptions, type ObiWsEvent } from '../src/ws.js';
+import { ObiWsClient, type ObiWsEvent } from '../src/ws.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Mock WebSocket
@@ -58,6 +58,13 @@ class MockWebSocket {
 
 let latestMock: MockWebSocket | null = null;
 
+function getLatestMock(): MockWebSocket {
+  if (!latestMock) {
+    throw new Error('Expected mock WebSocket to be created');
+  }
+  return latestMock;
+}
+
 function installMockWebSocket(): void {
   (globalThis as Record<string, unknown>).WebSocket = class extends MockWebSocket {
     constructor(url: string) {
@@ -107,7 +114,7 @@ describe('ObiWsClient', () => {
       const client = new ObiWsClient({ url: 'ws://localhost:3011/ws' });
       client.connect();
       expect(latestMock).not.toBeNull();
-      expect(latestMock!.url).toBe('ws://localhost:3011/ws');
+      expect(getLatestMock().url).toBe('ws://localhost:3011/ws');
     });
 
     it('should call onConnect when connection opens', () => {
@@ -117,14 +124,14 @@ describe('ObiWsClient', () => {
         onConnect,
       });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       expect(onConnect).toHaveBeenCalledOnce();
     });
 
     it('should report connected=true after open', () => {
       const client = new ObiWsClient({ url: 'ws://localhost:3011/ws' });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       expect(client.connected).toBe(true);
     });
 
@@ -134,10 +141,10 @@ describe('ObiWsClient', () => {
         reconnectIntervalMs: 100,
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateClose(); // triggers reconnect
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateClose(); // triggers reconnect
       vi.advanceTimersByTime(150);
-      const newMock = latestMock!;
+      const newMock = getLatestMock();
       newMock.simulateOpen();
       expect(client.reconnectAttempts).toBe(0);
     });
@@ -146,7 +153,7 @@ describe('ObiWsClient', () => {
       const client = new ObiWsClient({ url: 'ws://localhost:3011/ws' });
       client.connect();
       const firstMock = latestMock;
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       client.connect(); // second call — should not open another socket
       expect(latestMock).toBe(firstMock);
     });
@@ -156,7 +163,7 @@ describe('ObiWsClient', () => {
     it('should close the WebSocket', () => {
       const client = new ObiWsClient({ url: 'ws://localhost:3011/ws' });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       client.disconnect();
       expect(client.connected).toBe(false);
     });
@@ -168,7 +175,7 @@ describe('ObiWsClient', () => {
         onDisconnect,
       });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       client.disconnect();
       expect(onDisconnect).toHaveBeenCalled();
     });
@@ -182,7 +189,7 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 5,
       });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       client.disconnect();
       vi.advanceTimersByTime(1_000);
       // onConnect was called once on initial open; no re-opens after disconnect
@@ -203,11 +210,11 @@ describe('ObiWsClient', () => {
         onEvent: (e) => events.push(e),
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateMessage(JSON.stringify({ type: 'cycle_start', timestamp: 1000 }));
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateMessage(JSON.stringify({ type: 'cycle_start', timestamp: 1000 }));
       expect(events).toHaveLength(1);
-      expect(events[0]!.type).toBe('cycle_start');
-      expect(events[0]!.timestamp).toBe(1000);
+      expect(events[0]?.type).toBe('cycle_start');
+      expect(events[0]?.timestamp).toBe(1000);
     });
 
     it('should ignore non-JSON messages silently', () => {
@@ -217,8 +224,8 @@ describe('ObiWsClient', () => {
         onError,
       });
       client.connect();
-      latestMock!.simulateOpen();
-      expect(() => latestMock!.simulateMessage('not valid json')).not.toThrow();
+      getLatestMock().simulateOpen();
+      expect(() => getLatestMock().simulateMessage('not valid json')).not.toThrow();
       // onError not called for parse errors
       expect(onError).not.toHaveBeenCalled();
     });
@@ -230,8 +237,8 @@ describe('ObiWsClient', () => {
         onEvent: (e) => events.push(e),
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateMessage(JSON.stringify({ no_type: true }));
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateMessage(JSON.stringify({ no_type: true }));
       expect(events).toHaveLength(0);
     });
 
@@ -243,8 +250,8 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 0, // disable reconnect for this test
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateClose();
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateClose();
       expect(onDisconnect).toHaveBeenCalledOnce();
     });
 
@@ -256,7 +263,7 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 0,
       });
       client.connect();
-      latestMock!.simulateError();
+      getLatestMock().simulateError();
       expect(onError).toHaveBeenCalledOnce();
     });
   });
@@ -265,10 +272,11 @@ describe('ObiWsClient', () => {
     it('should serialise data as JSON and send it', () => {
       const client = new ObiWsClient({ url: 'ws://localhost:3011/ws' });
       client.connect();
-      latestMock!.simulateOpen();
+      getLatestMock().simulateOpen();
       client.send({ action: 'ping' });
-      expect(latestMock!.sentMessages).toHaveLength(1);
-      expect(JSON.parse(latestMock!.sentMessages[0]!)).toEqual({
+      const sentMessages = getLatestMock().sentMessages;
+      expect(sentMessages).toHaveLength(1);
+      expect(JSON.parse(sentMessages[0] ?? 'null')).toEqual({
         action: 'ping',
       });
     });
@@ -289,10 +297,10 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 3,
       });
       client.connect();
-      latestMock!.simulateOpen(); // 1st open
-      latestMock!.simulateClose(); // triggers reconnect
+      getLatestMock().simulateOpen(); // 1st open
+      getLatestMock().simulateClose(); // triggers reconnect
       vi.advanceTimersByTime(600);
-      latestMock!.simulateOpen(); // 2nd open (reconnect)
+      getLatestMock().simulateOpen(); // 2nd open (reconnect)
       expect(onConnect).toHaveBeenCalledTimes(2);
     });
 
@@ -303,11 +311,11 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 3,
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateClose();
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateClose();
       expect(client.reconnectAttempts).toBe(1);
       vi.advanceTimersByTime(150);
-      latestMock!.simulateClose();
+      getLatestMock().simulateClose();
       expect(client.reconnectAttempts).toBe(2);
     });
 
@@ -320,12 +328,12 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 2,
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateClose(); // attempt 1
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateClose(); // attempt 1
       vi.advanceTimersByTime(150);
-      latestMock!.simulateClose(); // attempt 2
+      getLatestMock().simulateClose(); // attempt 2
       vi.advanceTimersByTime(150);
-      latestMock!.simulateClose(); // attempt 3 — exceeds max
+      getLatestMock().simulateClose(); // attempt 3 — exceeds max
       vi.advanceTimersByTime(150);
       // onError should be called with the "max attempts" error
       const errorCalls = onError.mock.calls.filter(([e]: [Error]) => e.message.includes('max reconnect'));
@@ -341,8 +349,8 @@ describe('ObiWsClient', () => {
         maxReconnectAttempts: 0,
       });
       client.connect();
-      latestMock!.simulateOpen();
-      latestMock!.simulateClose();
+      getLatestMock().simulateOpen();
+      getLatestMock().simulateClose();
       vi.advanceTimersByTime(500);
       expect(onConnect).toHaveBeenCalledOnce(); // only the initial connection
     });
@@ -358,7 +366,7 @@ describe('ObiWsClient', () => {
       });
       client.connect();
       expect(onError).toHaveBeenCalledOnce();
-      expect(onError.mock.calls[0]![0].message).toContain('WebSocket is not available');
+      expect(onError.mock.calls[0]?.[0].message).toContain('WebSocket is not available');
     });
   });
 });

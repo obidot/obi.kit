@@ -1,15 +1,15 @@
 import { Tool } from '@langchain/core/tools';
-import { createPublicClient, http } from 'viem';
 import type { ObiEvmContext } from '@obidot-kit/core';
 import { LIQUIDITY_PAIR_ABI, POLKADOT_HUB_TESTNET_CONTRACTS } from '@obidot-kit/core';
+import { createPublicClient, http } from 'viem';
 
 /** Known LP pair label → address mapping (SP-1 deployment). */
 const LP_PAIRS: Record<string, `0x${string}`> = {
-  'tDOT/TKB':   POLKADOT_HUB_TESTNET_CONTRACTS.lpPairDotTkb,
+  'tDOT/TKB': POLKADOT_HUB_TESTNET_CONTRACTS.lpPairDotTkb,
   'tDOT/tUSDC': POLKADOT_HUB_TESTNET_CONTRACTS.lpPairDotUsdc,
-  'tDOT/tETH':  POLKADOT_HUB_TESTNET_CONTRACTS.lpPairDotEth,
+  'tDOT/tETH': POLKADOT_HUB_TESTNET_CONTRACTS.lpPairDotEth,
   'tUSDC/tETH': POLKADOT_HUB_TESTNET_CONTRACTS.lpPairUsdcEth,
-  'TKB/TKA':    POLKADOT_HUB_TESTNET_CONTRACTS.lpPairTkbTka,
+  'TKB/TKA': POLKADOT_HUB_TESTNET_CONTRACTS.lpPairTkbTka,
 };
 
 export interface LpPoolStateToolOptions {
@@ -27,7 +27,8 @@ export class LpPoolStateTool extends Tool {
   description =
     'Read current reserves and price ratio for a UniswapV2 LP pair. ' +
     'Input: pair label (e.g. "tDOT/TKB") or pair address (0x...). ' +
-    'Available pairs: ' + Object.keys(LP_PAIRS).join(', ');
+    'Available pairs: ' +
+    Object.keys(LP_PAIRS).join(', ');
 
   private evmContext?: ObiEvmContext;
 
@@ -41,15 +42,13 @@ export class LpPoolStateTool extends Tool {
       const trimmed = input.trim();
       const pairAddress: `0x${string}` = trimmed.startsWith('0x')
         ? (trimmed as `0x${string}`)
-        : LP_PAIRS[trimmed] ?? (() => {
-            throw new Error(
-              `Unknown pair: "${trimmed}". Available: ${Object.keys(LP_PAIRS).join(', ')}`,
-            );
-          })();
+        : (LP_PAIRS[trimmed] ??
+          (() => {
+            throw new Error(`Unknown pair: "${trimmed}". Available: ${Object.keys(LP_PAIRS).join(', ')}`);
+          })());
 
       const client =
-        this.evmContext?.client ??
-        createPublicClient({ transport: http('https://eth-rpc-testnet.polkadot.io/') });
+        this.evmContext?.client ?? createPublicClient({ transport: http('https://eth-rpc-testnet.polkadot.io/') });
 
       const [token0, token1, reserves, totalSupply] = await Promise.all([
         client.readContract({ address: pairAddress, abi: LIQUIDITY_PAIR_ABI, functionName: 'token0' }),
@@ -59,8 +58,7 @@ export class LpPoolStateTool extends Tool {
       ]);
 
       const [reserve0, reserve1] = reserves as [bigint, bigint, number];
-      const priceRatio =
-        reserve0 === 0n ? '0' : (Number(reserve1) / Number(reserve0)).toFixed(6);
+      const priceRatio = reserve0 === 0n ? '0' : (Number(reserve1) / Number(reserve0)).toFixed(6);
 
       return JSON.stringify({
         pair: pairAddress,

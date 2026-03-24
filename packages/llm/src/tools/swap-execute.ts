@@ -171,7 +171,10 @@ export class SwapExecuteTool extends Tool {
 
     const { SWAP_ROUTER_ABI, SWAP_QUOTER_ABI } = await import('@obidot-kit/core');
 
-    const account = ctx.account!;
+    const account = ctx.account;
+    if (!account) {
+      throw new Error('Signer account required for swap execution');
+    }
     const tokenIn = input.tokenIn as `0x${string}`;
     const tokenOut = input.tokenOut as `0x${string}`;
     const pool = input.pool as `0x${string}`;

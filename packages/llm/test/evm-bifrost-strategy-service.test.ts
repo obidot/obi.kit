@@ -1,6 +1,6 @@
 import type { ObiEvmContext } from '@obidot-kit/core';
 import { BifrostCurrencyId, BifrostStrategyType } from '@obidot-kit/core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EvmBifrostStrategyService } from '../src/services/evm-bifrost-strategy-service.js';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ describe('EvmBifrostStrategyService', () => {
       expect(result.txHash).toBe(TX_HASH);
       expect(result.amountOut).toBe(10_000_000_000n);
 
-      expect(ctx.walletClient!.writeContract).toHaveBeenCalledWith(
+      expect(ctx.walletClient?.writeContract).toHaveBeenCalledWith(
         expect.objectContaining({
           address: ADAPTER_ADDRESS,
           functionName: 'executeBifrostStrategy',
@@ -145,7 +145,7 @@ describe('EvmBifrostStrategyService', () => {
 
       await service.executeStrategy(BifrostStrategyType.MintVToken, BifrostCurrencyId.DOT, 1_000n, 0n, 0);
 
-      const call = (ctx.walletClient!.writeContract as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const call = (ctx.walletClient?.writeContract as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const beneficiary: string = call.args[0].beneficiary;
 
       // 32-byte hex: 12 zero bytes + 20-byte address

@@ -177,7 +177,11 @@ export class BatchStrategyTool extends Tool {
     }
 
     const ctx = this.evmContext;
-    const wallet = ctx.walletClient!;
+    const wallet = ctx.walletClient;
+    const account = ctx.account;
+    if (!wallet || !account) {
+      throw new Error('Wallet client and account are required for batch strategy execution');
+    }
     const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
     // Build intents and signatures arrays
@@ -201,7 +205,7 @@ export class BatchStrategyTool extends Tool {
       functionName: 'executeStrategies',
       args: [intents, signatures],
       chain: ctx.chain,
-      account: ctx.account as `0x${string}`,
+      account: account as `0x${string}`,
     });
 
     const receipt = await ctx.client.waitForTransactionReceipt({ hash });
