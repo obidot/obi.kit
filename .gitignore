@@ -36,3 +36,5 @@ pnpm-debug.log*
 .changeset/*.md
 !.changeset/config.json
 !.changeset/README.md
+# CocoIndex Code (ccc)
+/.cocoindex_code/
