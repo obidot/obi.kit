@@ -4,18 +4,26 @@
   "description": "High-level SDK combining core and LLM modules for Obidot Kit",
   "type": "module",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
@@ -40,6 +48,15 @@
     "xcm",
     "sdk"
   ],
+  "homepage": "https://github.com/obidot/obi-kit#readme",
+  "bugs": {
+    "url": "https://github.com/obidot/obi-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obidot/obi-kit.git",
+    "directory": "packages/sdk"
+  },
   "publishConfig": {
     "access": "public"
   }

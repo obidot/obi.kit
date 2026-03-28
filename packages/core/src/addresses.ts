@@ -51,6 +51,10 @@ export const POLKADOT_HUB_TESTNET_CONTRACTS = {
   /** OracleRegistry — multi-asset price oracle registry with staleness checks */
   oracleRegistryAddress: '0x8b7C7345d6cF9de45f4aacC61F56F0241d47e88B',
 
+  // ── Periphery ─────────────────────────────────────────────────────────────
+  /** LiquidityRouter — LP add/remove helper for the deployed UniswapV2-style pairs */
+  liquidityRouterAddress: '0xe8a26f28207ba060c2fd98ff5d7df85347f0eb08',
+
   // ── Cross-Chain Infrastructure ────────────────────────────────────────────
   /** CrossChainRouter — hub ISMP message router (dispatches + receives ISMP messages) */
   crossChainRouterAddress: '0xE2fFfb3B5C72f99811bC20D857035611bFCe5b5d',

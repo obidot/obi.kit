@@ -15,7 +15,7 @@
 | Package                               | Description                                              | Version                                                                                                 |
 | ------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | [`@obidot-kit/core`](./packages/core) | ABIs, types, EVM context, WebSocket client               | [![npm](https://img.shields.io/npm/v/@obidot-kit/core)](https://www.npmjs.com/package/@obidot-kit/core) |
-| [`@obidot-kit/llm`](./packages/llm)   | 19+ LangChain tools — vault, swap, intent, oracle, admin | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm)   |
+| [`@obidot-kit/llm`](./packages/llm)   | 20+ LangChain tools — vault, swap, liquidity, cross-chain, oracle | [![npm](https://img.shields.io/npm/v/@obidot-kit/llm)](https://www.npmjs.com/package/@obidot-kit/llm)   |
 | [`@obidot-kit/sdk`](./packages/sdk)   | High-level SDK combining core + llm                      | [![npm](https://img.shields.io/npm/v/@obidot-kit/sdk)](https://www.npmjs.com/package/@obidot-kit/sdk)   |
 | [`@obidot-kit/cli`](./packages/cli)   | CLI — `obi-kit init / run / info`                        | [![npm](https://img.shields.io/npm/v/@obidot-kit/cli)](https://www.npmjs.com/package/@obidot-kit/cli)   |
 
@@ -26,7 +26,7 @@ cli → sdk → llm → core
 ## Quick Start
 
 ```sh
-pnpm add @obidot-kit/sdk
+pnpm add @obidot-kit/sdk @langchain/core viem
 ```
 
 ```ts
@@ -41,7 +41,7 @@ const evmContext = createEvmContext({
 const kit = new ObiKit({ evmContext });
 
 kit.registerVault({
-  id: "obidot-paseo",
+  id: "obidot-polkadot-hub-testnet",
   address: OBIDOT_VAULT_ADDRESS,
   asset: "DOT",
   decimals: 10,
@@ -53,6 +53,46 @@ const tools = kit.getTools();
 // ExecuteIntentTool, BifrostYieldTool, OracleUpdateTool, …
 ```
 
+To use the packaged CLI:
+
+```sh
+pnpm add -g @obidot-kit/cli
+obi-kit info
+```
+
+For one-off runs without a global install:
+
+```sh
+pnpm dlx @obidot-kit/cli info
+```
+
+To scaffold a recurring swap bot:
+
+```sh
+pnpm dlx @obidot-kit/cli init my-dca-bot --template dca-bot
+```
+
+To scaffold the preview-first yield optimizer example:
+
+```sh
+pnpm dlx @obidot-kit/cli init my-yield-optimizer --template yield-optimizer
+```
+
+### Package Entry Points
+
+- `@obidot-kit/core` — ABIs, addresses, shared EVM context, typed helpers
+- `@obidot-kit/llm` — LangChain-compatible tools and agent helpers
+- `@obidot-kit/sdk` — higher-level composition layer around core + llm
+- `@obidot-kit/cli` — `obi-kit init`, `obi-kit run`, and `obi-kit info`
+  - Templates currently include `starter`, `vault-agent`, `cross-chain-agent`, `dca-bot`, and `yield-optimizer`
+
+### Tool Highlights
+
+- Local execution: `SwapQuoteTool`, `SwapExecuteTool`, `SwapMultiHopTool`, `ExecuteLocalSwapTool`
+- Cross-chain planning: `CrossChainStateTool`, `CrossChainRouteTool`, `CrossChainRebalanceTool`
+- Liquidity management: `LiquidityAddTool`, `LiquidityRemoveTool`, `LpPoolStateTool`
+- Risk and operations: `PerformanceTool`, `OracleCheckTool`, `OracleUpdateTool`, `BatchStrategyTool`
+
 ### With LangChain
 
 ```ts
@@ -60,7 +100,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { createAgent } from "@obidot-kit/llm";
 
 const agent = createAgent({
-  model: new ChatOpenAI({ model: "gpt-4" }),
+  model: new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-5.4-mini" }),
   additionalTools: kit.getTools(),
 });
 
@@ -84,8 +124,50 @@ pnpm build
 | `pnpm test`      | Run all tests (Vitest)       |
 | `pnpm lint`      | Lint (Biome)                 |
 | `pnpm typecheck` | Type-check all packages      |
+| `pnpm pack:verify` | Verify npm tarball contents |
 | `pnpm changeset` | Create a changeset           |
 | `pnpm release`   | Publish all changed packages |
+
+## Publishing
+
+The release workflow lives in [`.github/workflows/release.yml`](./.github/workflows/release.yml).
+
+- Tagging `v*.*.*` runs install, lint, typecheck, build, test, package verification, and publish.
+- Manual `workflow_dispatch` supports a dry run before pushing a real release tag.
+- Each package publishes with public access under the `@obidot-kit/*` scope.
+
+Before tagging a release, verify the tarballs locally:
+
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm pack:verify --output-dir .pack-output
+```
+
+That produces the same `.tgz` publish artifacts the CI workflow validates before npm publish and fails if any package accidentally includes source or test files or omits package-level `README.md` / `LICENSE`.
+
+### Manual npm publish order
+
+If you are publishing manually instead of using the release workflow, publish in
+dependency order after a clean build:
+
+```sh
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm pack:verify --output-dir .pack-output
+
+cd packages/core && npm publish --access public
+cd ../llm && npm publish --access public
+cd ../sdk && npm publish --access public
+cd ../cli && npm publish --access public
+```
+
+The examples are not published packages. They stay in-repo as runnable references.
 
 ## Writing a Custom Tool
 

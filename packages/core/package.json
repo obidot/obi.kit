@@ -4,18 +4,26 @@
   "description": "Core types, interfaces, and base tool classes for Obidot Kit",
   "type": "module",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
@@ -29,6 +37,15 @@
     "defi",
     "xcm"
   ],
+  "homepage": "https://github.com/obidot/obi-kit#readme",
+  "bugs": {
+    "url": "https://github.com/obidot/obi-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obidot/obi-kit.git",
+    "directory": "packages/core"
+  },
   "devDependencies": {
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",

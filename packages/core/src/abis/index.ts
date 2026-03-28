@@ -1,12 +1,14 @@
 // AUTO-GENERATED — do not edit manually.
 // Run "pnpm sync:abis" to regenerate.
 
+export { ASSET_HUB_PAIR_ADAPTER_ABI } from './asset-hub-pair-adapter.js';
 export { BIFROST_ADAPTER_ABI } from './bifrost-adapter.js';
 export { CROSS_CHAIN_ROUTER_ABI } from './cross-chain-router.js';
 export { HYDRATION_OMNIPOOL_ADAPTER_ABI } from './hydration-omnipool-adapter.js';
 export { INTERLAY_ADAPTER_ABI } from './interlay-adapter.js';
 export { KARURA_ADAPTER_ABI } from './karura-adapter.js';
 export { LIQUIDITY_PAIR_ABI } from './liquidity-pair.js';
+export { LIQUIDITY_ROUTER_ABI } from './liquidity-router.js';
 export { MOONBEAM_ADAPTER_ABI } from './moonbeam-adapter.js';
 export { OBIDOT_VAULT_ABI } from './obidot-vault.js';
 export { ORACLE_REGISTRY_ABI } from './oracle-registry.js';

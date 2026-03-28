@@ -1,11 +1,12 @@
 import { Tool } from '@langchain/core/tools';
-import type {
-  ChainConfig,
-  CrossChainVaultState,
-  ObiEvmContext,
-  SatelliteChainState,
-  SatelliteVaultConfig,
-  ToolResult,
+import {
+  type ChainConfig,
+  type CrossChainVaultState,
+  type ObiEvmContext,
+  SATELLITE_VAULT_ABI,
+  type SatelliteChainState,
+  type SatelliteVaultConfig,
+  type ToolResult,
 } from '@obidot-kit/core';
 
 /**
@@ -71,9 +72,11 @@ export class CrossChainStateTool extends Tool {
   name = 'fetch_cross_chain_state';
 
   description =
-    'Fetch the aggregated cross-chain vault state across the hub and all satellite vaults. ' +
-    'Input is an optional JSON string with "chainName" to filter by a specific satellite ' +
-    'and "includeDetails" (boolean) to control per-satellite breakdown.';
+    'Read aggregated hub-plus-satellite vault state across the configured cross-chain deployment. ' +
+    'This is a read-only inventory and health tool: use it for balances, paused/emergency flags, and ' +
+    'last sync timestamps, not for route discovery or transaction execution. Input is optional JSON with ' +
+    '"chainName" to filter to one satellite and "includeDetails" (boolean, default true) to include the ' +
+    'per-satellite breakdown.';
 
   private readonly chainConfig: ChainConfig | undefined;
   private readonly hubVaultAddress: string | undefined;
@@ -188,8 +191,6 @@ export class CrossChainStateTool extends Tool {
 
       try {
         // Read satellite vault state via viem
-        const { SATELLITE_VAULT_ABI } = await import('@obidot-kit/core');
-
         const [localAssets, globalAssets, emergency, lastSync, paused] = await Promise.all([
           evmCtx.client.readContract({
             address: sat.address as `0x${string}`,

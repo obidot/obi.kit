@@ -15,6 +15,25 @@ import { describe, expect, it, vi } from 'vitest';
 import { createEvmContext, type ObiEvmContext } from '../src/evm.js';
 import { createPolkadotContext, destroyPolkadotContext, type ObiPolkadotContext } from '../src/polkadot.js';
 
+const initializeApiMock = vi.fn(async () => {});
+const disconnectApiMock = vi.fn(async () => {});
+const polkadotApiConstructorArgs: unknown[] = [];
+
+vi.mock('@polkadot-agent-kit/core', () => {
+  class MockPolkadotApi {
+    constructor(allowedChains?: unknown) {
+      polkadotApiConstructorArgs.push(allowedChains);
+    }
+
+    initializeApi = initializeApiMock;
+    disconnect = disconnectApiMock;
+  }
+
+  return {
+    PolkadotApi: MockPolkadotApi,
+  };
+});
+
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 const mockChain: Chain = {
@@ -135,5 +154,40 @@ describe('createPolkadotContext options shape (compile-time)', () => {
     // requires a live PAK smoldot connection (bootstraps smoldot wasm blob).
     // We just verify the import resolves and exposes the expected function.
     expect(typeof createPolkadotContext).toBe('function');
+  });
+
+  it('creates a polkadot context and initializes the mocked PAK API', async () => {
+    initializeApiMock.mockClear();
+    disconnectApiMock.mockClear();
+    polkadotApiConstructorArgs.length = 0;
+
+    const signer = makeMockSigner();
+    const ctx = await createPolkadotContext({
+      signer,
+      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      allowedChains: ['paseo_asset_hub'] as never,
+    });
+
+    expect(initializeApiMock).toHaveBeenCalledTimes(1);
+    expect(polkadotApiConstructorArgs).toEqual([['paseo_asset_hub']]);
+    expect(ctx.signer).toBe(signer);
+    expect(ctx.address).toContain('5Grwva');
+    expect(ctx.evmContext).toBeUndefined();
+  });
+
+  it('attaches an EVM context when includeEvm and privateKey are provided', async () => {
+    initializeApiMock.mockClear();
+
+    const ctx = await createPolkadotContext({
+      signer: makeMockSigner(),
+      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+      includeEvm: true,
+      privateKey: '0x1111111111111111111111111111111111111111111111111111111111111111',
+    });
+
+    expect(initializeApiMock).toHaveBeenCalledTimes(1);
+    expect(ctx.evmContext).toBeDefined();
+    expect(ctx.evmContext?.chain.id).toBe(420_420_417);
+    expect(ctx.evmContext?.account).toMatch(/^0x[a-fA-F0-9]{40}$/);
   });
 });

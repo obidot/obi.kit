@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/RelayTeleportAdapter.sol/RelayTeleportAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.629Z
+// Synced: 2026-03-28T07:01:46.121Z
 //
 // RelayTeleportAdapter — XCM InitiateTeleport adapter targeting the relay chain (DOT/PAS).
 

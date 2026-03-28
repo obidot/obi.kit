@@ -1,5 +1,11 @@
-import type { ChainConfig, CrossChainVaultState, SatelliteChainState, SatelliteVaultConfig } from '@obidot-kit/core';
-import { describe, expect, it } from 'vitest';
+import type {
+  ChainConfig,
+  CrossChainVaultState,
+  ObiEvmContext,
+  SatelliteChainState,
+  SatelliteVaultConfig,
+} from '@obidot-kit/core';
+import { describe, expect, it, vi } from 'vitest';
 import { CrossChainStateTool } from '../src/tools/cross-chain-state.js';
 
 const hubChainConfig: ChainConfig = {
@@ -422,6 +428,30 @@ describe('CrossChainStateTool', () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain('string error');
     });
+
+    it('should wrap live read failures with the satellite chain name', async () => {
+      const failingReadContract = vi.fn().mockRejectedValue(new Error('rpc offline'));
+      const tool = new CrossChainStateTool({
+        satellites: [moonbeamSatellite],
+        evmContexts: new Map([
+          [
+            'Moonbeam',
+            {
+              client: {
+                readContract: failingReadContract,
+              },
+            } as ObiEvmContext,
+          ],
+        ]),
+      });
+
+      const raw = await tool.invoke('{}');
+      const result = JSON.parse(raw);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Failed to read satellite vault state on Moonbeam');
+      expect(result.error).toContain('rpc offline');
+    });
   });
 
   describe('multi-chain aggregation', () => {
@@ -518,6 +548,107 @@ describe('CrossChainStateTool', () => {
       const astar = result.data.satellites.find((s: { chainName: string }) => s.chainName === 'Astar');
       expect(astar.lastSyncTimestamp).toBe(1699990000);
       expect(astar.paused).toBe(true);
+    });
+  });
+
+  describe('live on-chain reads', () => {
+    function buildLiveContext(readContract: ReturnType<typeof vi.fn>): ObiEvmContext {
+      return {
+        client: {
+          readContract,
+        },
+      } as ObiEvmContext;
+    }
+
+    it('should aggregate live state from configured satellite contexts', async () => {
+      const moonbeamReadContract = vi
+        .fn()
+        .mockResolvedValueOnce(700n)
+        .mockResolvedValueOnce(900n)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(5000n)
+        .mockResolvedValueOnce(false);
+      const astarReadContract = vi
+        .fn()
+        .mockResolvedValueOnce(300n)
+        .mockResolvedValueOnce(600n)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(8000n)
+        .mockResolvedValueOnce(true);
+
+      const tool = new CrossChainStateTool({
+        satellites: [moonbeamSatellite, astarSatellite],
+        evmContexts: new Map([
+          ['Moonbeam', buildLiveContext(moonbeamReadContract)],
+          ['Astar', buildLiveContext(astarReadContract)],
+        ]),
+      });
+
+      const raw = await tool.invoke('{}');
+      const result = JSON.parse(raw);
+
+      expect(result.success).toBe(true);
+      expect(result.data.mode).toBe('on-chain');
+      expect(result.data.totalSatelliteAssets).toBe('1000');
+      expect(result.data.globalTotalAssets).toBe('1000');
+      expect(result.data.satellites).toEqual([
+        {
+          chainName: 'Moonbeam',
+          totalAssets: '700',
+          globalTotalAssets: '900',
+          emergencyMode: false,
+          lastSyncTimestamp: 5000,
+          paused: false,
+        },
+        {
+          chainName: 'Astar',
+          totalAssets: '300',
+          globalTotalAssets: '600',
+          emergencyMode: true,
+          lastSyncTimestamp: 8000,
+          paused: true,
+        },
+      ]);
+    });
+
+    it('should include a zeroed fallback entry when a satellite lacks a live context', async () => {
+      const moonbeamReadContract = vi
+        .fn()
+        .mockResolvedValueOnce(250n)
+        .mockResolvedValueOnce(400n)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(1200n)
+        .mockResolvedValueOnce(false);
+
+      const tool = new CrossChainStateTool({
+        satellites: [moonbeamSatellite, astarSatellite],
+        evmContexts: new Map([['Moonbeam', buildLiveContext(moonbeamReadContract)]]),
+      });
+
+      const raw = await tool.invoke('{}');
+      const result = JSON.parse(raw);
+
+      expect(result.success).toBe(true);
+      expect(result.data.mode).toBe('on-chain');
+      expect(result.data.totalSatelliteAssets).toBe('250');
+      expect(result.data.satellites).toEqual([
+        {
+          chainName: 'Moonbeam',
+          totalAssets: '250',
+          globalTotalAssets: '400',
+          emergencyMode: false,
+          lastSyncTimestamp: 1200,
+          paused: false,
+        },
+        {
+          chainName: 'Astar',
+          totalAssets: '0',
+          globalTotalAssets: '0',
+          emergencyMode: false,
+          lastSyncTimestamp: 0,
+          paused: false,
+        },
+      ]);
     });
   });
 });

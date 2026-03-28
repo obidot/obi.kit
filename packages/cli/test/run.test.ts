@@ -3,6 +3,18 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@obidot-kit/sdk', () => ({
+  ObiKit: class {
+    inspect() {
+      return {
+        mode: 'stub',
+        vaultCount: 0,
+        totalToolCount: 0,
+      };
+    }
+  },
+}));
+
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 let testDir: string;

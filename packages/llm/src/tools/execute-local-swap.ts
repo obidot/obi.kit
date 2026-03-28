@@ -77,10 +77,12 @@ export class ExecuteLocalSwapTool extends Tool {
   name = 'execute_local_swap';
 
   description =
-    'Execute a vault-routed on-hub swap via ObidotVault.executeLocalSwap() on Polkadot Hub. ' +
-    'Routes through the SwapRouter with EIP-712 StrategyIntent authorization. ' +
-    'Input is a JSON string with swap parameters (poolType, pool, tokenIn, tokenOut, amountIn, minAmountOut), ' +
-    'strategy intent fields (asset, amount, minReturn, maxSlippageBps, deadline, nonce), and "signature" (EIP-712 hex).';
+    'Submit a signed vault-routed local swap through ObidotVault.executeLocalSwap() on Polkadot Hub. ' +
+    'Use this when you already have the swap route and an EIP-712-authorized StrategyIntent; prefer ' +
+    'swap_quote for quote discovery, swap_execute for direct router swaps, and swap_multi_hop for explicit ' +
+    'multi-hop router execution. Input is JSON with swap parameters (poolType, pool, tokenIn, tokenOut, ' +
+    'amountIn, minAmountOut), strategy intent fields (asset, amount, minReturn, maxSlippageBps, deadline, ' +
+    'nonce), and "signature" (EIP-712 hex).';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;

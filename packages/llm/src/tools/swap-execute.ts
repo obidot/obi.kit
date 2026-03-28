@@ -1,5 +1,11 @@
 import { Tool } from '@langchain/core/tools';
-import type { EvmVaultConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
+import {
+  type EvmVaultConfig,
+  type ObiEvmContext,
+  SWAP_QUOTER_ABI,
+  SWAP_ROUTER_ABI,
+  type ToolResult,
+} from '@obidot-kit/core';
 
 /**
  * Parsed input for the swap execute tool.
@@ -65,10 +71,12 @@ export class SwapExecuteTool extends Tool {
   name = 'swap_execute';
 
   description =
-    'Execute a single-hop swap through the Obidot DEX aggregator SwapRouter on Polkadot Hub. ' +
-    'Input is a JSON string with "poolType" (0-3), "pool" (address), "tokenIn", "tokenOut", ' +
-    '"amountIn", "minAmountOut" (all amounts as strings in base units), ' +
-    'optional "feeBps", "data" (hex), "to" (recipient, default signer), "deadline" (unix timestamp).';
+    'Execute one already-selected single-hop route through the Obidot SwapRouter on Polkadot Hub. ' +
+    'Use this after route discovery, not for quoting or multi-hop planning. Input is JSON with ' +
+    '"poolType", "pool", "tokenIn", "tokenOut", "amountIn", and "minAmountOut" as base-unit strings; ' +
+    'set "minAmountOut" to "0" only when a quoter is configured and you want the tool to derive a live ' +
+    'slippage floor. Optional fields: "feeBps", "data" (hex), "to", and "deadline". Without a wallet it ' +
+    'returns a stub/prepared result; with a wallet it handles approval if needed and submits the swap.';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;
@@ -168,8 +176,6 @@ export class SwapExecuteTool extends Tool {
         },
       };
     }
-
-    const { SWAP_ROUTER_ABI, SWAP_QUOTER_ABI } = await import('@obidot-kit/core');
 
     const account = ctx.account;
     if (!account) {

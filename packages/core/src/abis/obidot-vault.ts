@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/ObidotVault.sol/ObidotVault.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.613Z
+// Synced: 2026-03-28T07:01:46.109Z
 //
 // ObidotVault ERC-4626 hub vault with IIntentSolver and SwapRouter integration.
 

@@ -25,9 +25,9 @@ export interface LpPoolStateToolOptions {
 export class LpPoolStateTool extends Tool {
   name = 'lp_pool_state';
   description =
-    'Read current reserves and price ratio for a UniswapV2 LP pair. ' +
-    'Input: pair label (e.g. "tDOT/TKB") or pair address (0x...). ' +
-    'Available pairs: ' +
+    'Read-only reserve snapshot for a known Obidot LP pair or a raw pair address. ' +
+    'Returns token0/token1, current reserves, totalSupply, and a simple reserve price ratio. ' +
+    'Input: pair label (for example "tDOT/TKB") or pair address (0x...). Available pairs: ' +
     Object.keys(LP_PAIRS).join(', ');
 
   private evmContext?: ObiEvmContext;

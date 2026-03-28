@@ -40,10 +40,10 @@ export class VaultAdminTool extends Tool {
   name = 'vault_admin';
 
   description =
-    'Read ObidotVault administrative state: total shares/assets, share price, ' +
-    'paused/emergency status, strategyCounter, fee configuration, and role constants. ' +
-    'Input: optional JSON with "role" (role name to query, e.g. "DEFAULT_ADMIN_ROLE"). ' +
-    'Read-only — no wallet required.';
+    'Read ObidotVault governance and admin state: role constants, fee treasury, strategyCounter, ' +
+    'share totals, and paused or emergency flags. Use this for governance and control-plane inspection, ' +
+    'not portfolio performance analytics. Input: optional JSON with "role" (role name to query, ' +
+    'for example "DEFAULT_ADMIN_ROLE"). Read-only — no wallet required.';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;

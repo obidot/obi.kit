@@ -82,10 +82,11 @@ export class OracleUpdateTool extends Tool {
   name = 'oracle_update';
 
   description =
-    'Push a new price to the KeeperOracle contract. Requires KEEPER_ROLE. ' +
-    'Input: JSON with "oracleAddress" (KeeperOracle contract address) and "price" ' +
-    "(new price as decimal string, in the oracle's native precision — " +
-    'e.g. "1500000000" for $15.00 with 8-decimal feed).';
+    'State-changing keeper tool that pushes a new price to a KeeperOracle contract. ' +
+    'Use only when you already know the exact feed precision and are acting with KEEPER_ROLE; ' +
+    'use oracle_check for read-only inspection. Input: JSON with "oracleAddress" ' +
+    '(KeeperOracle contract address) and "price" (decimal string in the feed native precision, ' +
+    'for example "1500000000" for $15.00 on an 8-decimal oracle).';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly defaultOracleAddress: string | undefined;
@@ -149,9 +150,12 @@ export class OracleUpdateTool extends Tool {
     }
 
     const walletClient = ctx.walletClient;
-    const account = ctx.account;
-    if (!walletClient || !account) {
+    if (!walletClient) {
       throw new Error('Wallet client required for oracle price updates (KEEPER_ROLE)');
+    }
+    const account = ctx.account;
+    if (!account) {
+      throw new Error('Signer account required for oracle price updates');
     }
 
     const oracleAddress = input.oracleAddress as `0x${string}`;

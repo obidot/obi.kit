@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   release:
-    name: Build, Test & Publish
+    name: Validate, Pack & Publish
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,11 +43,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build all packages
-        run: pnpm build
+      - name: Lint workspace
+        run: pnpm lint
+
+      - name: Typecheck workspace
+        run: pnpm typecheck
 
       - name: Run tests
         run: pnpm test
+
+      - name: Build all packages
+        run: pnpm build
+
+      - name: Verify npm pack output
+        run: pnpm pack:verify --output-dir .pack-output
+
+      - name: Upload npm tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: obi-kit-tarballs
+          path: .pack-output/*.tgz
 
       - name: Publish to npm (dry run)
         if: ${{ github.event.inputs.dry_run == 'true' }}

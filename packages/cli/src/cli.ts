@@ -21,6 +21,7 @@ const helpText = `
     --help, -h    Show this help message
     --version     Show version number
     --config, -c  Path to agent config file (default: obi-kit.config.json)
+    --template    Init template (starter, vault-agent, cross-chain-agent, dca-bot)
     --verbose     Enable verbose logging
 `;
 
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', default: false },
       config: { type: 'string', short: 'c', default: 'obi-kit.config.json' },
+      template: { type: 'string' },
       verbose: { type: 'boolean', default: false },
     },
     strict: true,
@@ -60,7 +62,9 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'init':
-      await runInit(positionals[1]);
+      await runInit(positionals[1], {
+        template: values.template,
+      });
       break;
     case 'run':
       await runAgent({

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "noEmit": true,
+    "rootDir": "../..",
+    "paths": {
+      "@obidot-kit/core": ["packages/core/src/index.ts"],
+      "@obidot-kit/llm": ["packages/llm/src/index.ts"],
+      "@obidot-kit/sdk": ["packages/sdk/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

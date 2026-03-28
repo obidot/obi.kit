@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/SwapQuoter.sol/SwapQuoter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.626Z
+// Synced: 2026-03-28T07:01:46.119Z
 //
 // SwapQuoter — read-only quoter: getBestQuote, getAllQuotes, quoteMultiHop, buildBestSwap.
 

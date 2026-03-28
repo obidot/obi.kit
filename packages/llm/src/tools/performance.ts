@@ -35,9 +35,10 @@ export class PerformanceTool extends Tool {
   name = 'vault_performance';
 
   description =
-    'Read ObidotVault performance metrics and state. ' +
-    'Input is an optional JSON string with "protocol" (address to get per-protocol stats) ' +
-    'and "includeSummary" (boolean, default true).';
+    'Read ObidotVault performance analytics such as cumulative P&L, high-water mark, performance fees, ' +
+    'utilization, and optional per-protocol deployment results. Use this for monitoring and reporting, not ' +
+    'for admin configuration changes. Input is optional JSON with "protocol" (address to fetch per-protocol ' +
+    'stats) and "includeSummary" (boolean, default true).';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;

@@ -11,6 +11,7 @@ import type { BifrostStrategyService } from './tools/bifrost-strategy.js';
 import { BifrostStrategyTool } from './tools/bifrost-strategy.js';
 import { BifrostYieldTool } from './tools/bifrost-yield.js';
 import { CrossChainRebalanceTool } from './tools/cross-chain-rebalance.js';
+import { CrossChainRouteTool } from './tools/cross-chain-route.js';
 import { CrossChainStateTool } from './tools/cross-chain-state.js';
 import { VaultDepositTool } from './tools/vault-deposit.js';
 import { VaultWithdrawTool } from './tools/vault-withdraw.js';
@@ -359,7 +360,7 @@ export class ObiAgentApi {
   }
 
   /**
-   * Builds the cross-chain tools (state + rebalance) when config is provided.
+   * Builds the cross-chain tools (state + route preview + rebalance) when config is provided.
    */
   private buildCrossChainTools(): Tool[] {
     if (!this.crossChainConfig) {
@@ -375,6 +376,16 @@ export class ObiAgentApi {
         routerAddress: this.crossChainConfig.routerAddress,
         satellites: this.crossChainConfig.satellites,
         evmContexts: this.crossChainConfig.evmContexts,
+      }),
+    );
+
+    // Cross-chain route preview tool
+    tools.push(
+      new CrossChainRouteTool({
+        evmContext: this.ctx.evmContext,
+        hubVaultAddress: this.crossChainConfig.hubVaultAddress as `0x${string}`,
+        routerAddress: this.crossChainConfig.routerAddress as `0x${string}`,
+        satellites: this.crossChainConfig.satellites,
       }),
     );
 

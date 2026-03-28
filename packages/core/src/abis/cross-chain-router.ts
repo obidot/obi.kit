@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/CrossChainRouter.sol/CrossChainRouter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.620Z
+// Synced: 2026-03-28T07:01:46.115Z
 //
 // CrossChainRouter — hub ISMP message router (dispatches + receives).
 

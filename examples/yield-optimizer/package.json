@@ -1,0 +1,20 @@
+{
+  "name": "yield-optimizer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Preview-first yield optimizer example for Obidot Kit",
+  "scripts": {
+    "start": "node --env-file=.env --import tsx src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

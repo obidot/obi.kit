@@ -1,5 +1,5 @@
 import type { ChainConfig, ObiEvmContext, ObiPolkadotContext } from '@obidot-kit/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { VaultDepositTool } from '../src/tools/vault-deposit.js';
 
 const mockChainConfig: ChainConfig = {
@@ -8,6 +8,11 @@ const mockChainConfig: ChainConfig = {
   chainId: 'polkadot',
   ss58Prefix: 0,
 };
+
+const MOCK_VAULT = '0x03473a95971Ba0496786a615e21b1e87bDFf0025';
+const MOCK_ASSET = '0x2402C804aD8a6217BF73D8483dA7564065c56083';
+const MOCK_ACCOUNT = '0x5984A519fFfE5aFc5e8bBA233DCc01AC774f4301';
+const MOCK_RECEIVER = '0x1111111111111111111111111111111111111111';
 
 /** Minimal read-only EVM context (no walletClient) — simulates polkadot ctx without signer */
 const mockReadOnlyEvmContext: ObiEvmContext = {
@@ -68,6 +73,27 @@ describe('VaultDepositTool', () => {
         polkadotContext: mockPolkadotContext,
       });
       expect(tool.hasPolkadotContext()).toBe(true);
+    });
+
+    it('should expose hasEvmContext when setEvmContext is called', () => {
+      const tool = new VaultDepositTool({ chainConfig: mockChainConfig });
+      expect(tool.hasEvmContext()).toBe(false);
+
+      tool.setEvmContext(
+        {
+          client: {} as ObiEvmContext['client'],
+          walletClient: {} as ObiEvmContext['walletClient'],
+          account: MOCK_ACCOUNT,
+          chain: mockReadOnlyEvmContext.chain,
+        },
+        {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      );
+
+      expect(tool.hasEvmContext()).toBe(true);
     });
   });
 
@@ -262,6 +288,24 @@ describe('VaultDepositTool', () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain('amount');
     });
+
+    it('should use configured vault and asset defaults when omitted from input', async () => {
+      const tool = new VaultDepositTool({
+        chainConfig: mockChainConfig,
+        vaultConfig: {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      });
+
+      const raw = await tool.invoke(JSON.stringify({ amount: '750' }));
+      const result = JSON.parse(raw);
+
+      expect(result.success).toBe(true);
+      expect(result.data.vaultAddress).toBe(MOCK_VAULT);
+      expect(result.data.asset).toBe(MOCK_ASSET);
+    });
   });
 
   describe('runtime configuration', () => {
@@ -390,6 +434,202 @@ describe('VaultDepositTool', () => {
       const result = JSON.parse(raw);
 
       expect(result.data.signerAddress).toBe(mockPolkadotContext.address);
+    });
+  });
+
+  describe('evm mode', () => {
+    it('should execute a deposit without approval when allowance is already sufficient', async () => {
+      const mockReadContract = vi.fn().mockResolvedValueOnce(1_000n).mockResolvedValueOnce(777n);
+      const mockWriteContract = vi.fn().mockResolvedValue('0xdeposit');
+      const mockWaitForReceipt = vi.fn().mockResolvedValue({
+        status: 'success',
+        blockNumber: 20n,
+      });
+
+      const tool = new VaultDepositTool({
+        evmContext: {
+          client: {
+            readContract: mockReadContract,
+            waitForTransactionReceipt: mockWaitForReceipt,
+          } as ObiEvmContext['client'],
+          walletClient: {
+            writeContract: mockWriteContract,
+          } as ObiEvmContext['walletClient'],
+          account: MOCK_ACCOUNT,
+          chain: mockReadOnlyEvmContext.chain,
+        },
+        vaultConfig: {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      });
+
+      const raw = await tool.invoke(JSON.stringify({ amount: '500' }));
+      const result = JSON.parse(raw) as {
+        success: boolean;
+        txHash: string;
+        data: { approvalTxHash?: string; sharesReceived: string; receiver: string; status: string };
+      };
+
+      expect(result.success).toBe(true);
+      expect(result.txHash).toBe('0xdeposit');
+      expect(result.data.approvalTxHash).toBeUndefined();
+      expect(result.data.sharesReceived).toBe('777');
+      expect(result.data.receiver).toBe(MOCK_ACCOUNT);
+      expect(result.data.status).toBe('confirmed');
+      expect(mockReadContract).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          address: MOCK_ASSET,
+          functionName: 'allowance',
+          args: [MOCK_ACCOUNT, MOCK_VAULT],
+        }),
+      );
+      expect(mockReadContract).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          address: MOCK_VAULT,
+          functionName: 'previewDeposit',
+          args: [500n],
+        }),
+      );
+      expect(mockWriteContract).toHaveBeenCalledTimes(1);
+      expect(mockWriteContract).toHaveBeenCalledWith(
+        expect.objectContaining({
+          address: MOCK_VAULT,
+          functionName: 'deposit',
+          args: [500n, MOCK_ACCOUNT],
+        }),
+      );
+    }, 15_000);
+
+    it('should approve before deposit and surface a failed receipt status', async () => {
+      const mockReadContract = vi.fn().mockResolvedValueOnce(0n).mockResolvedValueOnce(333n);
+      const mockWriteContract = vi.fn().mockResolvedValueOnce('0xapprove').mockResolvedValueOnce('0xdeposit');
+      const mockWaitForReceipt = vi
+        .fn()
+        .mockResolvedValueOnce({ status: 'success', blockNumber: 21n })
+        .mockResolvedValueOnce({ status: 'reverted', blockNumber: 22n });
+
+      const tool = new VaultDepositTool({
+        evmContext: {
+          client: {
+            readContract: mockReadContract,
+            waitForTransactionReceipt: mockWaitForReceipt,
+          } as ObiEvmContext['client'],
+          walletClient: {
+            writeContract: mockWriteContract,
+          } as ObiEvmContext['walletClient'],
+          account: MOCK_ACCOUNT,
+          chain: mockReadOnlyEvmContext.chain,
+        },
+        vaultConfig: {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      });
+
+      const raw = await tool.invoke(JSON.stringify({ amount: '900', receiver: MOCK_RECEIVER }));
+      const result = JSON.parse(raw) as {
+        success: boolean;
+        txHash: string;
+        data: { approvalTxHash?: string; receiver: string; status: string; blockNumber: number };
+      };
+
+      expect(result.success).toBe(true);
+      expect(result.txHash).toBe('0xdeposit');
+      expect(result.data.approvalTxHash).toBe('0xapprove');
+      expect(result.data.receiver).toBe(MOCK_RECEIVER);
+      expect(result.data.status).toBe('failed');
+      expect(result.data.blockNumber).toBe(22);
+      expect(mockWriteContract).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          address: MOCK_ASSET,
+          functionName: 'approve',
+          args: [MOCK_VAULT, 900n],
+        }),
+      );
+      expect(mockWriteContract).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          address: MOCK_VAULT,
+          functionName: 'deposit',
+          args: [900n, MOCK_RECEIVER],
+        }),
+      );
+    }, 15_000);
+
+    it('should execute through embedded EVM context on polkadot mode when wallet and vault config are available', async () => {
+      const mockReadContract = vi.fn().mockResolvedValueOnce(500n).mockResolvedValueOnce(600n);
+      const mockWriteContract = vi.fn().mockResolvedValue('0xembedded');
+      const mockWaitForReceipt = vi.fn().mockResolvedValue({
+        status: 'success',
+        blockNumber: 23n,
+      });
+
+      const tool = new VaultDepositTool({
+        polkadotContext: {
+          ...mockPolkadotContext,
+          evmContext: {
+            client: {
+              readContract: mockReadContract,
+              waitForTransactionReceipt: mockWaitForReceipt,
+            } as ObiEvmContext['client'],
+            walletClient: {
+              writeContract: mockWriteContract,
+            } as ObiEvmContext['walletClient'],
+            account: MOCK_ACCOUNT,
+            chain: mockReadOnlyEvmContext.chain,
+          },
+        },
+        vaultConfig: {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      });
+
+      const raw = await tool.invoke(JSON.stringify({ amount: '400' }));
+      const result = JSON.parse(raw) as {
+        success: boolean;
+        txHash: string;
+        data: { mode: string; sharesReceived: string; status: string };
+      };
+
+      expect(result.success).toBe(true);
+      expect(result.txHash).toBe('0xembedded');
+      expect(result.data.mode).toBe('evm');
+      expect(result.data.sharesReceived).toBe('600');
+      expect(result.data.status).toBe('confirmed');
+    }, 15_000);
+
+    it('should surface an error when the wallet client is present but the account is missing', async () => {
+      const tool = new VaultDepositTool({
+        evmContext: {
+          client: {
+            readContract: vi.fn(),
+            waitForTransactionReceipt: vi.fn(),
+          } as ObiEvmContext['client'],
+          walletClient: {
+            writeContract: vi.fn(),
+          } as ObiEvmContext['walletClient'],
+          chain: mockReadOnlyEvmContext.chain,
+        },
+        vaultConfig: {
+          vaultAddress: MOCK_VAULT,
+          assetAddress: MOCK_ASSET,
+          assetDecimals: 18,
+        },
+      });
+
+      const raw = await tool.invoke(JSON.stringify({ amount: '100', vaultAddress: MOCK_VAULT, asset: MOCK_ASSET }));
+      const result = JSON.parse(raw) as { success: boolean; error: string };
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Wallet client and account are required');
     });
   });
 });

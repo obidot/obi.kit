@@ -1,11 +1,12 @@
 import { Tool } from '@langchain/core/tools';
-import type {
-  ChainConfig,
-  EvmVaultConfig,
-  ObiEvmContext,
-  ObiPolkadotContext,
-  ToolResult,
-  VaultAction,
+import {
+  type ChainConfig,
+  type EvmVaultConfig,
+  OBIDOT_VAULT_ABI,
+  type ObiEvmContext,
+  type ObiPolkadotContext,
+  type ToolResult,
+  type VaultAction,
 } from '@obidot-kit/core';
 
 export interface VaultDepositInput {
@@ -56,9 +57,12 @@ export class VaultDepositTool extends Tool {
   name = 'vault_deposit';
 
   description =
-    'Deposit assets into the ObidotVault ERC-4626 vault on Polkadot Hub EVM. ' +
-    'Input should be a JSON string with "vaultAddress" (or omit to use configured vault), ' +
-    '"amount" (in base units as string), "asset" (ERC-20 address), and optional "receiver" address.';
+    'Deposit assets into the ObidotVault ERC-4626 vault on Polkadot Hub. ' +
+    'Use this for hub-side capital deployment after you already know the target vault and asset. ' +
+    'Input is JSON with "amount" in base units, optional "vaultAddress" and "asset" (both default to the ' +
+    'configured vault settings when present), and optional "receiver". Without a wallet it returns a ' +
+    'prepared stub result; with an EVM wallet it checks allowance, approves if needed, previews shares, ' +
+    'and submits the deposit.';
 
   private chainConfig: ChainConfig | undefined;
   private polkadotContext: ObiPolkadotContext | undefined;
@@ -239,8 +243,6 @@ export class VaultDepositTool extends Tool {
     const assetAddress = action.asset as `0x${string}`;
     const amount = BigInt(action.amount);
     const receiverAddress = (receiver ?? account) as `0x${string}`;
-
-    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
     // ERC-20 ABI subset for allowance + approve
     const ERC20_ABI = [

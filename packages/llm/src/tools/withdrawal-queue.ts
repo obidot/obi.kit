@@ -1,5 +1,5 @@
 import { Tool } from '@langchain/core/tools';
-import type { EvmVaultConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
+import { type EvmVaultConfig, OBIDOT_VAULT_ABI, type ObiEvmContext, type ToolResult } from '@obidot-kit/core';
 
 /**
  * Parsed input for the withdrawal queue tool.
@@ -39,10 +39,10 @@ export class WithdrawalQueueTool extends Tool {
   name = 'withdrawal_queue';
 
   description =
-    'Manage ObidotVault withdrawal queue. Input is a JSON string with "action" ' +
-    '("request", "fulfill", "cancel", or "status"). ' +
-    'For "request": include "shares" (amount of shares to queue). ' +
-    'For "fulfill"/"cancel"/"status": include "requestId" (the withdrawal request ID).';
+    'Manage the ObidotVault withdrawal queue. Input is JSON with "action" set to "request", "fulfill", ' +
+    '"cancel", or "status". For "request", also send "shares" (share amount in base units). For ' +
+    '"fulfill", "cancel", or "status", send "requestId". Use this for queued withdrawals that cannot be ' +
+    'settled immediately; use vault_withdraw for direct withdraw/redeem flows.';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;
@@ -101,7 +101,6 @@ export class WithdrawalQueueTool extends Tool {
   }
 
   private async execute(input: WithdrawalQueueInput): Promise<ToolResult> {
-    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
     const vaultAddress = this.vaultConfig?.vaultAddress;
 
     if (!vaultAddress) {

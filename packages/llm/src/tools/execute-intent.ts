@@ -1,5 +1,5 @@
 import { Tool } from '@langchain/core/tools';
-import type { EvmVaultConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
+import { type EvmVaultConfig, OBIDOT_VAULT_ABI, type ObiEvmContext, type ToolResult } from '@obidot-kit/core';
 
 /**
  * Parsed input for the execute intent tool.
@@ -69,9 +69,10 @@ export class ExecuteIntentTool extends Tool {
   name = 'execute_intent';
 
   description =
-    'Execute a universal cross-chain intent via ObidotVault.executeIntent() on Polkadot Hub. ' +
-    'Routes to XCMExecutor (parachain) or HyperExecutor (EVM chain) based on destination type. ' +
-    'Input is a JSON string with "inAssetToken", "outAssetToken" (addresses), "amount", "minOut" (strings), ' +
+    'Submit a signed universal cross-chain intent through ObidotVault.executeIntent() on Polkadot Hub. ' +
+    'Use this only when route discovery is already done and you already have destination calldata plus an ' +
+    'EIP-712 signature; use cross-chain route or state tools for planning and inspection first. ' +
+    'Input is JSON with "inAssetToken", "outAssetToken" (addresses), "amount", "minOut" (strings), ' +
     '"destType" (0=Native XCM, 1=Hyperbridge), "paraId" or "chainId", "calldata" (hex payload), ' +
     '"nonce", "deadline" (strings), and "signature" (EIP-712 hex).';
 
@@ -164,8 +165,6 @@ export class ExecuteIntentTool extends Tool {
         },
       };
     }
-
-    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
     const account = ctx.account;
     if (!account) {

@@ -7,6 +7,7 @@ import type {
   ToolResult,
   VaultAction,
 } from '@obidot-kit/core';
+import { OBIDOT_VAULT_ABI } from '@obidot-kit/core';
 
 export interface VaultWithdrawInput {
   /** The vault address or identifier to withdraw from */
@@ -56,10 +57,11 @@ export class VaultWithdrawTool extends Tool {
   name = 'vault_withdraw';
 
   description =
-    'Withdraw assets from the ObidotVault ERC-4626 vault on Polkadot Hub EVM. ' +
-    'Input should be a JSON string with "amount" (in base units), optional "vaultAddress" ' +
-    '(defaults to configured vault), optional "asset", optional "receiver", and ' +
-    '"redeemShares" (boolean, default false — if true, amount is treated as shares to redeem).';
+    'Withdraw assets or redeem shares from the ObidotVault ERC-4626 vault on Polkadot Hub. ' +
+    'Input is JSON with "amount" in base units, optional "vaultAddress", optional "asset", optional ' +
+    '"receiver", and optional "redeemShares" (boolean, default false). Use "redeemShares": true when the ' +
+    'amount represents vault shares; otherwise the amount is treated as asset units for withdraw(). ' +
+    'Without a wallet it returns a prepared stub result, and with an EVM wallet it submits the real call.';
 
   private chainConfig: ChainConfig | undefined;
   private polkadotContext: ObiPolkadotContext | undefined;
@@ -228,8 +230,6 @@ export class VaultWithdrawTool extends Tool {
     const vaultAddress = action.vaultAddress as `0x${string}`;
     const amount = BigInt(action.amount);
     const receiverAddress = (receiver ?? account) as `0x${string}`;
-
-    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
 
     if (redeemShares) {
       // Redeem mode: shares -> assets

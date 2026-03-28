@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/HydrationOmnipoolAdapter.sol/HydrationOmnipoolAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.627Z
+// Synced: 2026-03-28T07:01:46.120Z
 //
 // HydrationOmnipoolAdapter — Hydration Omnipool XCM adapter (parachain 2034).
 
@@ -159,12 +159,12 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         internalType: 'address',
       },
       {
-        name: '',
+        name: 'tokenIn',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: '',
+        name: 'tokenOut',
         type: 'address',
         internalType: 'address',
       },
@@ -186,7 +186,7 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         internalType: 'uint256',
       },
     ],
-    stateMutability: 'pure',
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -251,6 +251,19 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
+    name: 'oracleRegistry',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract IOracleRegistryLike',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'renounceRole',
     inputs: [
       {
@@ -305,6 +318,19 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'function',
+    name: 'setOracleRegistry',
+    inputs: [
+      {
+        name: 'registry',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'setPairSupported',
     inputs: [
       {
@@ -325,6 +351,32 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setSimulationMode',
+    inputs: [
+      {
+        name: 'enabled',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'simulationMode',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -550,6 +602,19 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
   },
   {
     type: 'event',
+    name: 'OracleRegistrySet',
+    inputs: [
+      {
+        name: 'registry',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'PairUpdated',
     inputs: [
       {
@@ -649,6 +714,19 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
     anonymous: false,
   },
   {
+    type: 'event',
+    name: 'SimulationModeSet',
+    inputs: [
+      {
+        name: 'enabled',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool',
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: 'error',
     name: 'AccessControlBadConfirmation',
     inputs: [],
@@ -690,6 +768,11 @@ export const HYDRATION_OMNIPOOL_ADAPTER_ABI = [
         internalType: 'uint32',
       },
     ],
+  },
+  {
+    type: 'error',
+    name: 'OracleRegistryNotSet',
+    inputs: [],
   },
   {
     type: 'error',

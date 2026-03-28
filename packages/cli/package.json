@@ -4,6 +4,12 @@
   "description": "CLI tool for scaffolding and running Obidot Kit agents",
   "type": "module",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "obi-kit": "./dist/cli.js"
   },
@@ -19,6 +25,7 @@
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo",
@@ -36,5 +43,14 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "homepage": "https://github.com/obidot/obi-kit#readme",
+  "bugs": {
+    "url": "https://github.com/obidot/obi-kit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/obidot/obi-kit.git",
+    "directory": "packages/cli"
   }
 }

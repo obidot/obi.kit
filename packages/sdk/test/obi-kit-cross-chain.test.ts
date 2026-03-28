@@ -141,6 +141,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       const toolsAfter = kit.getTools();
       const namesAfter = toolsAfter.map((t) => t.name);
       expect(namesAfter).toContain('fetch_cross_chain_state');
+      expect(namesAfter).toContain('find_cross_chain_routes');
       expect(namesAfter).toContain('execute_cross_chain_rebalance');
     });
   });
@@ -218,6 +219,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       const names = tools.map((t) => t.name);
 
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
     });
 
@@ -228,6 +230,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       const names = tools.map((t) => t.name);
 
       expect(names).not.toContain('fetch_cross_chain_state');
+      expect(names).not.toContain('find_cross_chain_routes');
       expect(names).not.toContain('execute_cross_chain_rebalance');
     });
 
@@ -238,10 +241,11 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       });
 
       const ccTools = kit.getCrossChainTools();
-      expect(ccTools).toHaveLength(2);
+      expect(ccTools).toHaveLength(3);
 
       const names = ccTools.map((t) => t.name);
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
     });
 
@@ -261,6 +265,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       const names = tools.map((t) => t.name);
 
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
     });
   });
@@ -297,9 +302,10 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
 
       // Cross-chain tools
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
 
-      expect(tools).toHaveLength(6);
+      expect(tools).toHaveLength(7);
     });
 
     it('should include all tool categories in on-chain mode', () => {
@@ -326,9 +332,10 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       expect(names).toContain('fetch_bifrost_yields');
       expect(names).toContain('execute_bifrost_strategy');
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
 
-      expect(tools).toHaveLength(6);
+      expect(tools).toHaveLength(7);
     });
 
     it('should include custom tools alongside new tools', () => {
@@ -349,6 +356,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       expect(names).toContain('my_custom_tool');
       expect(names).toContain('fetch_bifrost_yields');
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
     });
   });
 
@@ -425,8 +433,8 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
       expect(info.hasBifrostConfig).toBe(true);
       expect(info.evmContextCount).toBe(0);
       expect(info.evmContextChains).toEqual([]);
-      // 4 tools: 2 Bifrost + 2 cross-chain
-      expect(info.totalToolCount).toBe(4);
+      // 5 tools: 2 Bifrost + 3 cross-chain
+      expect(info.totalToolCount).toBe(5);
     });
 
     it('should show zero satellites and no Bifrost when not configured', () => {
@@ -509,10 +517,11 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
 
       kit.registerSatelliteVault(moonbeamSatellite);
 
-      expect(kit.getCrossChainTools()).toHaveLength(2);
+      expect(kit.getCrossChainTools()).toHaveLength(3);
 
       const names = kit.getCrossChainTools().map((t) => t.name);
       expect(names).toContain('fetch_cross_chain_state');
+      expect(names).toContain('find_cross_chain_routes');
       expect(names).toContain('execute_cross_chain_rebalance');
     });
 
@@ -522,7 +531,7 @@ describe('ObiKit — Cross-Chain & Bifrost Support', () => {
         satellites: [moonbeamSatellite],
       });
 
-      expect(kit.getCrossChainTools()).toHaveLength(2);
+      expect(kit.getCrossChainTools()).toHaveLength(3);
 
       kit.removeSatelliteVault('Moonbeam');
 

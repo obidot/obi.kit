@@ -40,16 +40,17 @@ describe('runInit', () => {
       expect(result.projectDir).toBe(target);
     });
 
-    it('reports the four created files', async () => {
+    it('reports the starter scaffold files', async () => {
       const result = await runInit('test-agent', {
         targetDir: join(testDir, 'test-agent'),
         silent: true,
       });
-      expect(result.filesCreated).toHaveLength(4);
+      expect(result.filesCreated).toHaveLength(5);
       expect(result.filesCreated).toContain('package.json');
       expect(result.filesCreated).toContain('tsconfig.json');
       expect(result.filesCreated).toContain('src/index.ts');
       expect(result.filesCreated).toContain('.env.example');
+      expect(result.filesCreated).toContain('.gitignore');
     });
   });
 
@@ -109,13 +110,81 @@ describe('runInit', () => {
   });
 
   describe('.env.example', () => {
-    it('contains RPC_URL, PRIVATE_KEY, and VAULT_ADDRESS placeholders', async () => {
+    it('contains starter environment placeholders', async () => {
       const dir = join(testDir, 'env-project');
       await runInit('env-project', { targetDir: dir, silent: true });
       const raw = await readFile(join(dir, '.env.example'), 'utf8');
       expect(raw).toContain('RPC_URL');
-      expect(raw).toContain('PRIVATE_KEY');
       expect(raw).toContain('VAULT_ADDRESS');
+    });
+  });
+
+  describe('template selection', () => {
+    it('scaffolds the dca-bot template with README and swap dependencies', async () => {
+      const dir = join(testDir, 'dca-bot');
+      const result = await runInit('dca-bot', {
+        targetDir: dir,
+        template: 'dca-bot',
+        silent: true,
+      });
+
+      expect(result.template).toBe('dca-bot');
+      expect(result.filesCreated).toContain('README.md');
+      expect(result.filesCreated).toContain('.gitignore');
+
+      const pkgRaw = await readFile(join(dir, 'package.json'), 'utf8');
+      const pkg = JSON.parse(pkgRaw) as {
+        dependencies: Record<string, string>;
+      };
+      expect(pkg.dependencies['@obidot-kit/sdk']).toBeDefined();
+      expect(pkg.dependencies['viem']).toBeDefined();
+
+      const indexRaw = await readFile(join(dir, 'src', 'index.ts'), 'utf8');
+      expect(indexRaw).toContain('SwapQuoteTool');
+      expect(indexRaw).toContain('SwapExecuteTool');
+      expect(indexRaw).toContain('EXECUTE_SWAPS');
+    });
+
+    it('scaffolds the yield-optimizer template with preview-only guidance', async () => {
+      const dir = join(testDir, 'yield-optimizer');
+      const result = await runInit('yield-optimizer', {
+        targetDir: dir,
+        template: 'yield-optimizer',
+        silent: true,
+      });
+
+      expect(result.template).toBe('yield-optimizer');
+      expect(result.filesCreated).toContain('README.md');
+      expect(result.filesCreated).toContain('.env.example');
+
+      const pkgRaw = await readFile(join(dir, 'package.json'), 'utf8');
+      const pkg = JSON.parse(pkgRaw) as {
+        dependencies: Record<string, string>;
+      };
+      expect(pkg.dependencies['@obidot-kit/sdk']).toBeDefined();
+      expect(pkg.dependencies['viem']).toBeUndefined();
+
+      const readmeRaw = await readFile(join(dir, 'README.md'), 'utf8');
+      expect(readmeRaw).toContain('recommendation report');
+      expect(readmeRaw).toContain('CrossChainRouteTool');
+
+      const indexRaw = await readFile(join(dir, 'src', 'index.ts'), 'utf8');
+      expect(indexRaw).toContain('BifrostYieldTool');
+      expect(indexRaw).toContain('PerformanceTool');
+      expect(indexRaw).toContain('preview-only');
+      expect(indexRaw).toContain('LiquidityAddTool and LiquidityRemoveTool are not available yet');
+    });
+
+    it('throws a helpful error for unknown templates', async () => {
+      await expect(
+        runInit('broken-template', {
+          targetDir: join(testDir, 'broken-template'),
+          template: 'nope',
+          silent: true,
+        }),
+      ).rejects.toThrow(
+        'Unknown template "nope". Available templates: starter, vault-agent, cross-chain-agent, dca-bot, yield-optimizer',
+      );
     });
   });
 
@@ -129,6 +198,22 @@ describe('runInit', () => {
       const raw = await readFile(join(result.projectDir, 'package.json'), 'utf8');
       const pkg = JSON.parse(raw) as { name: string };
       expect(pkg.name).toBe('my-obi-agent');
+    });
+  });
+
+  describe('path handling', () => {
+    it('treats an absolute project path as the target directory and uses its basename as the package name', async () => {
+      const absoluteTarget = join(testDir, 'absolute-dca-bot');
+      const result = await runInit(absoluteTarget, {
+        silent: true,
+        template: 'dca-bot',
+      });
+
+      expect(result.projectDir).toBe(absoluteTarget);
+
+      const raw = await readFile(join(result.projectDir, 'package.json'), 'utf8');
+      const pkg = JSON.parse(raw) as { name: string };
+      expect(pkg.name).toBe('absolute-dca-bot');
     });
   });
 });

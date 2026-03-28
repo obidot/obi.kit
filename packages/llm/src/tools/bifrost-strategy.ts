@@ -138,12 +138,13 @@ export class BifrostStrategyTool extends Tool {
   name = 'execute_bifrost_strategy';
 
   description =
-    'Execute a Bifrost DeFi strategy (SLP mint/redeem, DEX swap, farming, SALP). ' +
-    'Input should be a JSON string with "strategyType" (0-6), "currencyIn" (0-4), "amount", ' +
-    'optional "minOut" (default "0"), and optional "poolId" (default 0). ' +
-    'Strategy types: 0=MintVToken, 1=RedeemVToken, 2=DEXSwap, 3=FarmDeposit, ' +
-    '4=FarmWithdraw, 5=FarmClaim, 6=SALPContribute. ' +
-    'Currency IDs: 0=DOT, 1=vDOT, 2=KSM, 3=vKSM, 4=BNC.';
+    'Preview or execute one concrete Bifrost action such as minting or redeeming vTokens, ' +
+    'doing a Bifrost DEX swap, managing a farm position, or contributing to SALP. ' +
+    'Use this for a single Bifrost step, not for cross-chain routing or generic vault state reads. ' +
+    'Input is JSON with "strategyType" (0-6), "currencyIn" (0-4), "amount", optional "minOut" ' +
+    '(default "0"), and optional "poolId" (default 0). Strategy types: 0=MintVToken, 1=RedeemVToken, ' +
+    '2=DEXSwap, 3=FarmDeposit, 4=FarmWithdraw, 5=FarmClaim, 6=SALPContribute. Currency IDs: ' +
+    '0=DOT, 1=vDOT, 2=KSM, 3=vKSM, 4=BNC.';
 
   private readonly strategyService?: BifrostStrategyService;
   private readonly adapterAddress?: string;

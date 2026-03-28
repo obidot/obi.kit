@@ -18,6 +18,7 @@ import {
   BifrostStrategyTool,
   BifrostYieldTool,
   CrossChainRebalanceTool,
+  CrossChainRouteTool,
   CrossChainStateTool,
   ExecuteIntentTool,
   ExecuteLocalSwapTool,
@@ -759,6 +760,13 @@ export class ObiKit {
         routerAddress: satelliteArray[0]?.routerAddress,
         satellites: satelliteArray,
         evmContexts: this.evmContexts.size > 0 ? this.evmContexts : undefined,
+      }),
+      new CrossChainRouteTool({
+        evmContext: this.hubEvmContext,
+        hubVaultAddress: satelliteArray[0]?.hubVaultAddress as `0x${string}` | undefined,
+        oracleRegistryAddress: this.evmVaultConfig?.oracleRegistryAddress,
+        routerAddress: satelliteArray[0]?.routerAddress as `0x${string}` | undefined,
+        satellites: satelliteArray,
       }),
       new CrossChainRebalanceTool({
         chainConfig,

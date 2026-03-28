@@ -5,6 +5,7 @@ import { VaultPolicyTool } from '../src/tools/vault-policy.js';
 
 const MOCK_VAULT = '0x03473a95971Ba0496786a615e21b1e87bDFf0025';
 const MOCK_ORACLE = '0x8b7C7345d6cF9de45f4aacC61F56F0241d47e88B';
+const MOCK_ACCOUNT = '0x1111111111111111111111111111111111111111' as const;
 
 // ─── VaultPolicyTool ──────────────────────────────────────────────────────────
 
@@ -285,6 +286,7 @@ describe('OracleUpdateTool', () => {
           walletClient: {
             writeContract: mockWriteContract,
           } as never,
+          account: MOCK_ACCOUNT,
         },
       });
 
@@ -313,6 +315,7 @@ describe('OracleUpdateTool', () => {
             waitForTransactionReceipt: mockWaitForReceipt,
           } as never,
           walletClient: { writeContract: mockWriteContract } as never,
+          account: MOCK_ACCOUNT,
         },
       });
 

@@ -15,7 +15,13 @@ export type {
   RouterState,
 } from './services/evm-cross-chain-service.js';
 export { EvmCrossChainService } from './services/evm-cross-chain-service.js';
-
+export type {
+  ArbitrageDetectInput,
+  ArbitrageDetectToolOptions,
+  ArbitragePoolDefinition,
+  ArbitragePoolState,
+} from './tools/arbitrage-detect.js';
+export { ArbitrageDetectTool } from './tools/arbitrage-detect.js';
 export type { ObiBaseToolOptions } from './tools/base-tool.js';
 export { ObiBaseTool } from './tools/base-tool.js';
 export type {
@@ -41,6 +47,12 @@ export type {
 } from './tools/cross-chain-rebalance.js';
 export { CrossChainRebalanceTool } from './tools/cross-chain-rebalance.js';
 export type {
+  CrossChainRouteEstimate,
+  CrossChainRouteInput,
+  CrossChainRouteToolOptions,
+} from './tools/cross-chain-route.js';
+export { CrossChainRouteTool } from './tools/cross-chain-route.js';
+export type {
   CrossChainStateInput,
   CrossChainStateToolOptions,
 } from './tools/cross-chain-state.js';
@@ -55,6 +67,18 @@ export type {
   ExecuteLocalSwapToolOptions,
 } from './tools/execute-local-swap.js';
 export { ExecuteLocalSwapTool } from './tools/execute-local-swap.js';
+export type {
+  LiquidityAddInput,
+  LiquidityAddToolOptions,
+} from './tools/liquidity-add.js';
+export { LiquidityAddTool } from './tools/liquidity-add.js';
+export type {
+  LiquidityRemoveInput,
+  LiquidityRemoveToolOptions,
+} from './tools/liquidity-remove.js';
+export { LiquidityRemoveTool } from './tools/liquidity-remove.js';
+export type { LpPoolStateToolOptions } from './tools/lp-pool-state.js';
+export { LpPoolStateTool } from './tools/lp-pool-state.js';
 export type {
   OracleCheckInput,
   OracleCheckToolOptions,

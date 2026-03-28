@@ -1,11 +1,15 @@
+export { ArbitrageDetectTool } from './arbitrage-detect.js';
 export { ObiBaseTool } from './base-tool.js';
 export { BatchStrategyTool } from './batch-strategy.js';
 export { BifrostStrategyTool } from './bifrost-strategy.js';
 export { BifrostYieldTool } from './bifrost-yield.js';
 export { CrossChainRebalanceTool } from './cross-chain-rebalance.js';
+export { CrossChainRouteTool } from './cross-chain-route.js';
 export { CrossChainStateTool } from './cross-chain-state.js';
 export { ExecuteIntentTool } from './execute-intent.js';
 export { ExecuteLocalSwapTool } from './execute-local-swap.js';
+export { LiquidityAddTool } from './liquidity-add.js';
+export { LiquidityRemoveTool } from './liquidity-remove.js';
 export { LpPoolStateTool } from './lp-pool-state.js';
 export { OracleCheckTool } from './oracle-check.js';
 export { OracleUpdateTool } from './oracle-update.js';

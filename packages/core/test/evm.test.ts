@@ -1,6 +1,13 @@
 import type { Chain } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 import { describe, expect, it } from 'vitest';
-import { type CreateEvmContextOptions, createEvmContext, destroyEvmContext, type ObiEvmContext } from '../src/evm.js';
+import {
+  type CreateEvmContextOptions,
+  createEvmContext,
+  createSwapRouterContext,
+  destroyEvmContext,
+  type ObiEvmContext,
+} from '../src/evm.js';
 
 /**
  * Minimal mock chain definition that satisfies viem's Chain type
@@ -107,6 +114,37 @@ describe('createEvmContext', () => {
     expect(ctx).toBeDefined();
     expect(ctx.chainName).toBe('Moonbeam Custom');
     expect(ctx.chain).toBe(mockChain);
+  });
+
+  it('should create a wallet client when an account is provided', () => {
+    const account = privateKeyToAccount('0x1111111111111111111111111111111111111111111111111111111111111111');
+
+    const ctx = createEvmContext({
+      rpcUrl: 'https://rpc.api.moonbeam.network',
+      chain: mockChain,
+      chainName: 'Moonbeam',
+      account,
+    });
+
+    expect(ctx.walletClient).toBeDefined();
+    expect(ctx.account).toBe(account.address);
+  });
+
+  it('should bundle swap router config on top of the base EVM context', () => {
+    const ctx = createSwapRouterContext({
+      rpcUrl: 'https://rpc.api.moonbeam.network',
+      chain: mockChain,
+      chainName: 'Moonbeam',
+      swapRouterAddress: '0x0000000000000000000000000000000000000001',
+      quoterAddress: '0x0000000000000000000000000000000000000002',
+      adapters: {
+        0: '0x0000000000000000000000000000000000000003',
+      },
+    });
+
+    expect(ctx.swapRouterAddress).toBe('0x0000000000000000000000000000000000000001');
+    expect(ctx.quoterAddress).toBe('0x0000000000000000000000000000000000000002');
+    expect(ctx.adapters?.[0]).toBe('0x0000000000000000000000000000000000000003');
   });
 });
 

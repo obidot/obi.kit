@@ -1,0 +1,19 @@
+{
+  "name": "@obidot-kit/example-dca-bot",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Example: recurring tUSDC -> tDOT DCA bot on Polkadot Hub Testnet",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obidot-kit/sdk": "workspace:*",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

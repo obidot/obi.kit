@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/KaruraAdapter.sol/KaruraAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.630Z
+// Synced: 2026-03-28T07:01:46.122Z
 //
 // KaruraAdapter — Karura DEX (Dex.swapWithExactSupply) via XCM Transact (para 2000).
 

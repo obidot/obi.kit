@@ -8,13 +8,14 @@
       "!!**/.turbo",
       "!!**/node_modules",
       "!!**/dist",
+      "!!**/coverage",
       "!!**/.changeset/*.md"
     ],
     "ignoreUnknown": true
   },
   "linter": {
     "enabled": true,
-    "includes": ["**", "!node_modules/**", "!dist/**", "!.turbo/**", "!.changeset/**"],
+    "includes": ["**", "!node_modules/**", "!dist/**", "!coverage/**", "!.turbo/**", "!.changeset/**"],
     "rules": {
       "recommended": true,
       "correctness": {
@@ -38,7 +39,15 @@
     "lineWidth": 120,
     "indentStyle": "space",
     "indentWidth": 2,
-    "includes": ["**", "!node_modules/**", "!dist/**", "!.turbo/**", "!.changeset/**", "!pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!node_modules/**",
+      "!dist/**",
+      "!coverage/**",
+      "!.turbo/**",
+      "!.changeset/**",
+      "!pnpm-lock.yaml"
+    ]
   },
   "javascript": {
     "formatter": {

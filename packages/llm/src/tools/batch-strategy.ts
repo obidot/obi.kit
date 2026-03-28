@@ -1,5 +1,5 @@
 import { Tool } from '@langchain/core/tools';
-import type { EvmVaultConfig, ObiEvmContext, ToolResult } from '@obidot-kit/core';
+import { type EvmVaultConfig, OBIDOT_VAULT_ABI, type ObiEvmContext, type ToolResult } from '@obidot-kit/core';
 
 /**
  * A single strategy intent for batch execution.
@@ -60,11 +60,12 @@ export class BatchStrategyTool extends Tool {
   name = 'execute_batch_strategies';
 
   description =
-    'Execute multiple strategies in a single batch transaction on the ObidotVault. ' +
-    'Input is a JSON string with "strategies" (array of objects). Each strategy needs: ' +
-    '"asset", "amount", "minReturn", "maxSlippageBps", "deadline", "nonce", ' +
-    '"xcmCall" (hex bytes), "targetParachain" (number), "targetProtocol" (address), ' +
-    'and "signature" (EIP-712 hex signature from strategist).';
+    'Batch multiple pre-signed vault strategy intents into one ObidotVault write transaction. ' +
+    'Use this only when every item already has strategist-approved limits and an EIP-712 signature; ' +
+    'it is the final relay step, not a planning or analytics tool. Input is JSON with "strategies" ' +
+    '(array of objects), and each strategy needs "asset", "amount", "minReturn", "maxSlippageBps", ' +
+    '"deadline", "nonce", "xcmCall" (hex bytes), "targetParachain" (number), "targetProtocol" ' +
+    '(address), and "signature" (strategist EIP-712 signature).';
 
   private readonly evmContext: ObiEvmContext | undefined;
   private readonly vaultConfig: EvmVaultConfig | undefined;
@@ -182,8 +183,6 @@ export class BatchStrategyTool extends Tool {
     if (!wallet || !account) {
       throw new Error('Wallet client and account are required for batch strategy execution');
     }
-    const { OBIDOT_VAULT_ABI } = await import('@obidot-kit/core');
-
     // Build intents and signatures arrays
     const intents = input.strategies.map((s) => ({
       asset: s.asset as `0x${string}`,

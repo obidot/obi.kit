@@ -1,6 +1,7 @@
-import type { ChainConfig, ObiPolkadotContext } from '@obidot-kit/core';
+import type { Chain, ChainConfig, EvmVaultConfig, ObiPolkadotContext, SwapRouterConfig } from '@obidot-kit/core';
+import { createEvmContext } from '@obidot-kit/core';
 import { VaultDepositTool } from '@obidot-kit/llm';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ObiKit } from '../src/obi-kit.js';
 
 const mockChainConfig: ChainConfig = {
@@ -37,6 +38,43 @@ const mockPolkadotContext: ObiPolkadotContext = {
     signBytes: async () => new Uint8Array(),
   } as unknown as ObiPolkadotContext['signer'],
   address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+};
+
+const mockHubChain: Chain = {
+  id: 420420417,
+  name: 'Polkadot Hub TestNet',
+  nativeCurrency: {
+    name: 'Paseo DOT',
+    symbol: 'PAS',
+    decimals: 10,
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://eth-rpc-testnet.polkadot.io/'],
+    },
+  },
+};
+
+const mockHubEvmContext = createEvmContext({
+  rpcUrl: 'https://eth-rpc-testnet.polkadot.io/',
+  chain: mockHubChain,
+  chainName: 'Polkadot Hub TestNet',
+});
+
+const mockEvmVaultConfig: EvmVaultConfig = {
+  vaultAddress: '0x03473a95971Ba0496786a615e21b1e87bDFf0025',
+  assetAddress: '0x2402C804aD8a6217BF73D8483dA7564065c56083',
+  assetDecimals: 18,
+  oracleRegistryAddress: '0x8b7C7345d6cF9de45f4aacC61F56F0241d47e88B',
+};
+
+const mockSwapRouterConfig: SwapRouterConfig = {
+  routerAddress: '0x60a72d1e20c5dc40Bb5a24394f0583d863201A3c',
+  quoterAddress: '0x81d7aCFEF474DA6c76eC1b5A05a137cB9f3A5Db1',
+  adapters: {
+    0: '0x0000000000000000000000000000000000000001',
+    1: '0x0000000000000000000000000000000000000002',
+  },
 };
 
 describe('ObiKit SDK', () => {
@@ -85,6 +123,50 @@ describe('ObiKit SDK', () => {
       kit.setChainConfig(mockKusamaConfig);
 
       expect(kit.getChainConfig()).toEqual(mockKusamaConfig);
+    });
+  });
+
+  describe('evm mode', () => {
+    it('should expose EVM vault and swap tools when configured', () => {
+      const kit = new ObiKit({
+        hubEvmContext: mockHubEvmContext,
+        evmVaultConfig: mockEvmVaultConfig,
+        swapRouterConfig: mockSwapRouterConfig,
+      });
+
+      expect(kit.isEvmMode()).toBe(true);
+      expect(kit.getHubEvmContext()).toBe(mockHubEvmContext);
+      expect(kit.getEvmVaultConfig()).toEqual(mockEvmVaultConfig);
+      expect(kit.getSwapRouterConfig()).toEqual(mockSwapRouterConfig);
+
+      const names = kit.getTools().map((tool) => tool.name);
+      expect(names).toContain('vault_state');
+      expect(names).toContain('vault_deposit');
+      expect(names).toContain('swap_quote');
+      expect(names).toContain('swap_execute');
+      expect(names).toContain('swap_multi_hop');
+      expect(names).toContain('execute_local_swap');
+      expect(names).toContain('execute_intent');
+    });
+
+    it('should support updating EVM vault and swap router config after construction', () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+
+      kit.setEvmVault(mockHubEvmContext, mockEvmVaultConfig);
+      kit.registerSwapRouter(mockSwapRouterConfig);
+
+      expect(kit.isEvmMode()).toBe(true);
+      expect(kit.getEvmVaultConfig()).toEqual(mockEvmVaultConfig);
+      expect(kit.getSwapRouterConfig()).toEqual(mockSwapRouterConfig);
+      expect(kit.getPoolAdapters()).toEqual({
+        0: '0x0000000000000000000000000000000000000001',
+        1: '0x0000000000000000000000000000000000000002',
+      });
+    });
+
+    it('returns an empty pool adapter map when swap router config is absent', () => {
+      const kit = new ObiKit({ hubEvmContext: mockHubEvmContext, evmVaultConfig: mockEvmVaultConfig });
+      expect(kit.getPoolAdapters()).toEqual({});
     });
   });
 
@@ -283,6 +365,40 @@ describe('ObiKit SDK', () => {
       expect(result.message).toContain('not found');
       expect(result.message).toContain('nonexistent_tool');
     });
+
+    it('should return raw string output when a tool response is not JSON', async () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+      kit.addTool({
+        name: 'plain_text_tool',
+        invoke: async () => 'plain text result',
+      } as never);
+
+      const result = await kit.invokeTool('plain_text_tool', '{}');
+
+      expect(result).toEqual({
+        success: true,
+        message: 'plain text result',
+      });
+    });
+  });
+
+  describe('convenience swap and intent wrappers', () => {
+    it('delegates swap and intent helpers to invokeTool()', async () => {
+      const kit = new ObiKit({ chainConfig: mockChainConfig });
+      const invokeToolSpy = vi.spyOn(kit, 'invokeTool').mockResolvedValue({ success: true, message: 'ok' });
+
+      await kit.getSwapQuote('{}');
+      await kit.executeSwap('{}');
+      await kit.executeMultiHopSwap('{}');
+      await kit.executeLocalSwap('{}');
+      await kit.executeUniversalIntent('{}');
+
+      expect(invokeToolSpy).toHaveBeenNthCalledWith(1, 'swap_quote', '{}');
+      expect(invokeToolSpy).toHaveBeenNthCalledWith(2, 'swap_execute', '{}');
+      expect(invokeToolSpy).toHaveBeenNthCalledWith(3, 'swap_multi_hop', '{}');
+      expect(invokeToolSpy).toHaveBeenNthCalledWith(4, 'execute_local_swap', '{}');
+      expect(invokeToolSpy).toHaveBeenNthCalledWith(5, 'execute_intent', '{}');
+    });
   });
 
   describe('inspect', () => {
@@ -327,6 +443,33 @@ describe('ObiKit SDK', () => {
       // At least vault tools should be counted
       expect(info.totalToolCount).toBeGreaterThanOrEqual(2);
     });
+
+    it('should surface EVM, swap-router, and custom-tool metadata', () => {
+      const customTool = new VaultDepositTool({
+        chainConfig: mockChainConfig,
+      });
+      Object.defineProperty(customTool, 'name', { value: 'custom_evm_tool' });
+
+      const kit = new ObiKit({
+        chainConfig: mockChainConfig,
+        hubEvmContext: mockHubEvmContext,
+        evmVaultConfig: mockEvmVaultConfig,
+        swapRouterConfig: mockSwapRouterConfig,
+      });
+
+      kit.addTool(customTool);
+
+      const info = kit.inspect();
+
+      expect(info.mode).toBe('evm');
+      expect(info.hasEvmVault).toBe(true);
+      expect(info.hasSwapRouter).toBe(true);
+      expect(info.poolAdapterCount).toBe(2);
+      expect(info.customToolCount).toBe(1);
+      expect(info.customToolNames).toEqual(['custom_evm_tool']);
+      expect(info.swapRouterAddress).toBe(mockSwapRouterConfig.routerAddress);
+      expect(info.swapQuoterAddress).toBe(mockSwapRouterConfig.quoterAddress);
+    });
   });
 
   describe('legacy signer', () => {
@@ -368,6 +511,25 @@ describe('ObiKit SDK', () => {
       expect(kit.isOnChainMode()).toBe(true);
       expect(kit.getChainConfig()).toEqual(mockChainConfig);
       expect(kit.getPolkadotContext()).toBe(mockPolkadotContext);
+    });
+  });
+
+  describe('lifecycle', () => {
+    it('disconnects the active polkadot context', async () => {
+      const disconnect = vi.fn(async () => {});
+      const kit = new ObiKit({
+        polkadotContext: {
+          ...mockPolkadotContext,
+          api: {
+            ...mockPolkadotContext.api,
+            disconnect,
+          } as ObiPolkadotContext['api'],
+        },
+      });
+
+      await kit.disconnect();
+
+      expect(disconnect).toHaveBeenCalledTimes(1);
     });
   });
 });

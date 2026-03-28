@@ -1,7 +1,7 @@
 // AUTO-GENERATED — do not edit manually.
 // Source: obi.router/out/MoonbeamAdapter.sol/MoonbeamAdapter.json
 // Router path: /home/harry-riddle/dev/github.com/obidot/obi.router
-// Synced: 2026-03-15T03:21:57.631Z
+// Synced: 2026-03-28T07:01:46.123Z
 //
 // MoonbeamAdapter — EVM call via XCM Transact on Moonbeam (para 2004, Ethereum pallet 4).
 

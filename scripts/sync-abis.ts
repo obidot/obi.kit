@@ -86,6 +86,12 @@ const CONTRACTS: ContractSpec[] = [
     description: 'HydrationOmnipoolAdapter — Hydration Omnipool XCM adapter (parachain 2034).',
   },
   {
+    artifact: 'AssetHubPairAdapter',
+    output: 'asset-hub-pair-adapter',
+    exportName: 'ASSET_HUB_PAIR_ADAPTER_ABI',
+    description: 'AssetHubPairAdapter — Asset Hub native pair adapter with optional oracle-backed simulation mode.',
+  },
+  {
     artifact: 'IPoolAdapter',
     output: 'pool-adapter',
     exportName: 'POOL_ADAPTER_ABI',
@@ -114,6 +120,18 @@ const CONTRACTS: ContractSpec[] = [
     output: 'interlay-adapter',
     exportName: 'INTERLAY_ADAPTER_ABI',
     description: 'InterlayAdapter — Interlay Loans.mint via XCM Transact (para 2032, Loans pallet 59).',
+  },
+  {
+    artifact: 'LiquidityPair',
+    output: 'liquidity-pair',
+    exportName: 'LIQUIDITY_PAIR_ABI',
+    description: 'LiquidityPair — pool-side LP token / reserve pair surface used by liquidity tools.',
+  },
+  {
+    artifact: 'LiquidityRouter',
+    output: 'liquidity-router',
+    exportName: 'LIQUIDITY_ROUTER_ABI',
+    description: 'LiquidityRouter — add/remove liquidity entrypoint for hub-side LP operations.',
   },
 ];
 
